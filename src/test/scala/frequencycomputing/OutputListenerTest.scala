@@ -4,7 +4,7 @@ import org.scalatest.FunSuite
 
 class OutputListenerTest extends FunSuite {
   private val trueFrequency = 2 * Math.PI * 1
-  private val falseFrequency = 2 * Math.PI * 1.1
+  private val falseFrequency = 2 * Math.PI * 1.01
   private val listener = new LeastSquaresListener(trueFrequency, falseFrequency)
 
   private val TRUE_INPUT = OutputWave(trueFrequency)
@@ -37,140 +37,140 @@ class OutputListenerTest extends FunSuite {
     }
   }
   
-  ignore("true") {
+  test("true") {
     val output: Option[OutputSymbol] = listener.listen(TRUE_INPUT)
     val expectedOutput = Some(TRUE)
     
     assert(output === expectedOutput)
   }
   
-  ignore("false") {
+  test("false") {
     val output: Option[OutputSymbol] = listener.listen(FALSE_INPUT)
     val expectedOutput = Some(FALSE)
     
     assert(output === expectedOutput)
   }
   
-  ignore("No output") {
-    val output: Option[OutputSymbol] = listener.listen(OutputWave(falseFrequency + 200))
+  test("FALSE OR") {
+    val output: Option[OutputSymbol] = listener.listen(FALSE_INPUT + OR)
     val expectedOutput = None
     
     assert(output === expectedOutput)
   }
-
-  ignore("TRUE OR TRUE") {
+  
+  test("TRUE OR TRUE") {
     val output: Option[OutputSymbol] = listener.listen(TRUE_INPUT + TRUE_INPUT + OR)
     val expectedOutput = Some(TRUE)
     
     assert(output === expectedOutput)
   }
   
-  ignore("FALSE OR FALSE") {
+  test("FALSE OR FALSE") {
     val output: Option[OutputSymbol] = listener.listen(FALSE_INPUT + FALSE_INPUT + OR)
     val expectedOutput = Some(FALSE)
     
     assert(output === expectedOutput)
   }
   
-  ignore("FALSE OR TRUE") {
+  test("FALSE OR TRUE") {
     val output: Option[OutputSymbol] = listener.listen(TRUE_INPUT + FALSE_INPUT + OR)
     val expectedOutput = Some(TRUE)
     
     assert(output === expectedOutput)
   }
   
-  ignore("TRUE AND TRUE") {
+  test("TRUE AND TRUE") {
     val output: Option[OutputSymbol] = listener.listen(TRUE_INPUT + TRUE_INPUT + AND)
     val expectedOutput = Some(TRUE)
     
     assert(output === expectedOutput)
   }
   
-  ignore("FALSE AND FALSE") {
+  test("FALSE AND FALSE") {
     val output: Option[OutputSymbol] = listener.listen(FALSE_INPUT + FALSE_INPUT + AND)
     val expectedOutput = Some(FALSE)
     
     assert(output === expectedOutput)
   }
   
-  ignore("FALSE AND TRUE") {
+  test("FALSE AND TRUE") {
     val output: Option[OutputSymbol] = listener.listen(FALSE_INPUT + TRUE_INPUT + AND)
     val expectedOutput = Some(FALSE)
     
     assert(output === expectedOutput)
   }
   
-  ignore("NOT TRUE") {
+  test("NOT TRUE") {
     val output: Option[OutputSymbol] = listener.listen(TRUE_INPUT + NOT)
     val expectedOutput = Some(FALSE)
     
     assert(output === expectedOutput)
   }
   
-  ignore("NOT FALSE") {
+  test("NOT FALSE") {
     val output: Option[OutputSymbol] = listener.listen(FALSE_INPUT + NOT)
     val expectedOutput = Some(TRUE)
     
     assert(output === expectedOutput)
   }
   
-  ignore("TRUE NAND TRUE") {
+  test("TRUE NAND TRUE") {
     val output: Option[OutputSymbol] = listener.listen(TRUE_INPUT + TRUE_INPUT + NAND)
     val expectedOutput = Some(FALSE)
     
     assert(output === expectedOutput)
   }
   
-  ignore("TRUE NAND FALSE") {
+  test("TRUE NAND FALSE") {
     val output: Option[OutputSymbol] = listener.listen(FALSE_INPUT + TRUE_INPUT + NAND)
     val expectedOutput = Some(TRUE)
     
     assert(output === expectedOutput)
   }
   
-  ignore("FALSE NAND FALSE") {
+  test("FALSE NAND FALSE") {
     val output: Option[OutputSymbol] = listener.listen(FALSE_INPUT + FALSE_INPUT + NAND)
     val expectedOutput = Some(TRUE)
     
     assert(output === expectedOutput)
   }
   
-  ignore("TRUE NOR TRUE") {
+  test("TRUE NOR TRUE") {
     val output: Option[OutputSymbol] = listener.listen(TRUE_INPUT + TRUE_INPUT + NOR)
     val expectedOutput = Some(FALSE)
     
     assert(output === expectedOutput)
   }
   
-  ignore("TRUE NOR FALSE") {
+  test("TRUE NOR FALSE") {
     val output: Option[OutputSymbol] = listener.listen(FALSE_INPUT + TRUE_INPUT + NOR)
     val expectedOutput = Some(FALSE)
     
     assert(output === expectedOutput)
   }
   
-  ignore("FALSE NOR FALSE") {
+  test("FALSE NOR FALSE") {
     val output: Option[OutputSymbol] = listener.listen(FALSE_INPUT + FALSE_INPUT + NOR)
     val expectedOutput = Some(TRUE)
     
     assert(output === expectedOutput)
   }
   
-  ignore("TRUE AND TRUE AND TRUE") {
+  test("TRUE AND TRUE AND TRUE") {
     val output: Option[OutputSymbol] = listener.listen(TRUE_INPUT + TRUE_INPUT + TRUE_INPUT + AND + AND)
     val expectedOutput = Some(TRUE)
     
     assert(output === expectedOutput)
   }
   
-  ignore("TRUE AND TRUE AND FALSE") {
+  test("TRUE AND TRUE AND FALSE") {
     val output: Option[OutputSymbol] = listener.listen(TRUE_INPUT + TRUE_INPUT + FALSE_INPUT + AND + AND)
     val expectedOutput = Some(FALSE)
     
     assert(output === expectedOutput)
   }  
   
-  ignore("TRUE AND FALSE AND FALSE") {
+  test("TRUE AND FALSE AND FALSE") {
     val output: Option[OutputSymbol] = listener.listen(TRUE_INPUT + FALSE_INPUT + FALSE_INPUT + AND + AND)
     val expectedOutput = Some(FALSE)
     
@@ -180,6 +180,13 @@ class OutputListenerTest extends FunSuite {
   test("FALSE AND FALSE AND FALSE") {
     val output: Option[OutputSymbol] = listener.listen(FALSE_INPUT + FALSE_INPUT + FALSE_INPUT + AND + AND)
     val expectedOutput = Some(FALSE)
+    
+    assert(output === expectedOutput)
+  }
+  
+  test("FALSE AND FALSE AND") {
+    val output: Option[OutputSymbol] = listener.listen(FALSE_INPUT + FALSE_INPUT + AND + AND)
+    val expectedOutput = None
     
     assert(output === expectedOutput)
   }

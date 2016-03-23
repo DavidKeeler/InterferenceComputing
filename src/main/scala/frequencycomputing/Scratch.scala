@@ -5,11 +5,11 @@ import quisp.SeriesData
 import quisp.Point
 
 object Scratch {
-   private val chartRange = Range.Double(0.0, 40 * Math.PI, 0.1)
-   private val displayRange = (chartRange.min.asInstanceOf[Int] - 1) to (chartRange.max.asInstanceOf[Int] + 1)
-  
-   private val trueFreq = 2 * Math.PI * 1.1
-   private val falseFreq = 2 * Math.PI * 1.0
+   private val trueFreq = 1.0
+   private val falseFreq = 1.1
+   
+   private val range = 120.0
+   private val chartRange = Range.Double(0.0, range, 2 * range/1000)
    
    private val TRUE = sine(trueFreq, 0)
    private val FALSE = sine(falseFreq, 0)
@@ -22,13 +22,13 @@ object Scratch {
    private val NOR = OR + NOT
    
 	def main(args: Array[String]) {
-	  val funct = data(FALSE + FALSE + TRUE + AND + AND)
-	  val otherFunct = data(TRUE)
-	  Plot.line(funct)
+	  val funct = data(sine(1.0, 0) + sine(1.01, 0))
+//	  val otherFunct = data(FALSE)
+	  
+	  val chart = Plot.line(funct)
 //	    .addSeries(otherFunct)
 //	    .series(0).name("TRUE + FALSE")
 //	    .series(1).name("TRUE")
-	    .xAxis.range(displayRange.min, displayRange.max)
 	    .yAxis.range(-2, 2)
 	}
    
@@ -43,7 +43,8 @@ object Scratch {
    }
    
    private def sine(freq: Double, phase: Double): Double=>Double = {
-     x: Double => Math.sin(freq * x + phase)
+     val normedFreq = 2 * Math.PI * freq
+     x: Double => Math.sin(normedFreq * x + phase)
    }
 	
 	private def data(funct: Double=>Double): SeriesData = {

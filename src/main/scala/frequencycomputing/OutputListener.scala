@@ -19,28 +19,34 @@ trait OutputListener {
   def listen(outputWave: Double=>Double): Option[OutputSymbol]
 }
 
-class LeastSquaresListener(trueFrequency: Double, falseFrequency: Double) extends OutputListener {
+class LeastSquaresListener(
+    val trueFrequency: Double, 
+    val falseFrequency: Double,
+    val threshold: Double = 2,
+    val periods: Double = 0.5) extends OutputListener {
   
-  private val threshold = 0.03       // threshold below which the classifier will fire
-  private val minX = 0.0
-  private val maxX = 2 * Math.PI
+  private val minX = -2 * Math.PI * periods
+  private val maxX =  2 * Math.PI * periods
   
   private val trueFunct = new SinFunct(trueFrequency)
   private val falseFunct = new SinFunct(falseFrequency)
   
   def listen(outputWave: Double=>Double): Option[OutputSymbol] = {
-    val (_, _, trueFit) = meanSqError(outputWave, trueFunct)
-    val (_, _, falseFit) = meanSqError(outputWave, falseFunct)
-println("LeastSquaresListener: trueFit: " + trueFit + " falseFit: " + falseFit + " ratio: " + trueFit/falseFit)
-    if (trueFit <= threshold && trueFit < falseFit) Some(TRUE)
-    else if (falseFit <= threshold && falseFit < trueFit) Some(FALSE)
+    val (trueAmplitude, truePhase, trueFit) = meanSqError(outputWave, trueFunct)
+    val (falseAmplitude, falsePhase, falseFit) = meanSqError(outputWave, falseFunct)
+    
+	if (trueFit/falseFit > threshold) Some(FALSE)
+    else if (falseFit/trueFit > threshold) Some(TRUE)
     else None
   }
   
   /**
    * @returns (amplitude, phase, mean squared error)
    */
-  private def meanSqError(outputWave: Double=>Double, target: ParametricUnivariateFunction): (Double, Double, Double) = {    
+  private def meanSqError(
+      outputWave: Double=>Double, 
+      target: ParametricUnivariateFunction): (Double, Double, Double) = {  
+    
     val points = new WeightedObservedPoints
     for (x <- minX to maxX by (maxX - minX)/10000) 
       points.add(x, outputWave(x))
