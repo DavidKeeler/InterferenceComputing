@@ -20,7 +20,7 @@ class OutputListenerTest extends FunSuite {
   }
   
   private class OutputWave(frequency: Double, phase: Double) extends (Double=>Double) {
-    def apply(x: Double): Double = Math.sin(frequency * x + phase)
+    def apply(x: Double): Double = Math.cos(frequency * x + phase)
     
     def +(otherFunc: Double=>Double): Double=>Double = {
       x: Double => this(x) + otherFunc(x)
@@ -51,145 +51,145 @@ class OutputListenerTest extends FunSuite {
     assert(output === expectedOutput)
   }
   
-  test("FALSE OR") {
-    val output: Option[OutputSymbol] = listener.listen(FALSE_INPUT + OR)
-    val expectedOutput = None
-    
-    assert(output === expectedOutput)
-  }
-  
-  test("TRUE OR TRUE") {
-    val output: Option[OutputSymbol] = listener.listen(TRUE_INPUT + TRUE_INPUT + OR)
-    val expectedOutput = Some(TRUE)
-    
-    assert(output === expectedOutput)
-  }
-  
-  test("FALSE OR FALSE") {
-    val output: Option[OutputSymbol] = listener.listen(FALSE_INPUT + FALSE_INPUT + OR)
-    val expectedOutput = Some(FALSE)
-    
-    assert(output === expectedOutput)
-  }
-  
-  test("FALSE OR TRUE") {
-    val output: Option[OutputSymbol] = listener.listen(TRUE_INPUT + FALSE_INPUT + OR)
-    val expectedOutput = Some(TRUE)
-    
-    assert(output === expectedOutput)
-  }
-  
-  test("TRUE AND TRUE") {
-    val output: Option[OutputSymbol] = listener.listen(TRUE_INPUT + TRUE_INPUT + AND)
-    val expectedOutput = Some(TRUE)
-    
-    assert(output === expectedOutput)
-  }
-  
-  test("FALSE AND FALSE") {
-    val output: Option[OutputSymbol] = listener.listen(FALSE_INPUT + FALSE_INPUT + AND)
-    val expectedOutput = Some(FALSE)
-    
-    assert(output === expectedOutput)
-  }
-  
-  test("FALSE AND TRUE") {
-    val output: Option[OutputSymbol] = listener.listen(FALSE_INPUT + TRUE_INPUT + AND)
-    val expectedOutput = Some(FALSE)
-    
-    assert(output === expectedOutput)
-  }
-  
-  test("NOT TRUE") {
-    val output: Option[OutputSymbol] = listener.listen(TRUE_INPUT + NOT)
-    val expectedOutput = Some(FALSE)
-    
-    assert(output === expectedOutput)
-  }
-  
-  test("NOT FALSE") {
-    val output: Option[OutputSymbol] = listener.listen(FALSE_INPUT + NOT)
-    val expectedOutput = Some(TRUE)
-    
-    assert(output === expectedOutput)
-  }
-  
-  test("TRUE NAND TRUE") {
-    val output: Option[OutputSymbol] = listener.listen(TRUE_INPUT + TRUE_INPUT + NAND)
-    val expectedOutput = Some(FALSE)
-    
-    assert(output === expectedOutput)
-  }
-  
-  test("TRUE NAND FALSE") {
-    val output: Option[OutputSymbol] = listener.listen(FALSE_INPUT + TRUE_INPUT + NAND)
-    val expectedOutput = Some(TRUE)
-    
-    assert(output === expectedOutput)
-  }
-  
-  test("FALSE NAND FALSE") {
-    val output: Option[OutputSymbol] = listener.listen(FALSE_INPUT + FALSE_INPUT + NAND)
-    val expectedOutput = Some(TRUE)
-    
-    assert(output === expectedOutput)
-  }
-  
-  test("TRUE NOR TRUE") {
-    val output: Option[OutputSymbol] = listener.listen(TRUE_INPUT + TRUE_INPUT + NOR)
-    val expectedOutput = Some(FALSE)
-    
-    assert(output === expectedOutput)
-  }
-  
-  test("TRUE NOR FALSE") {
-    val output: Option[OutputSymbol] = listener.listen(FALSE_INPUT + TRUE_INPUT + NOR)
-    val expectedOutput = Some(FALSE)
-    
-    assert(output === expectedOutput)
-  }
-  
-  test("FALSE NOR FALSE") {
-    val output: Option[OutputSymbol] = listener.listen(FALSE_INPUT + FALSE_INPUT + NOR)
-    val expectedOutput = Some(TRUE)
-    
-    assert(output === expectedOutput)
-  }
-  
-  test("TRUE AND TRUE AND TRUE") {
-    val output: Option[OutputSymbol] = listener.listen(TRUE_INPUT + TRUE_INPUT + TRUE_INPUT + AND + AND)
-    val expectedOutput = Some(TRUE)
-    
-    assert(output === expectedOutput)
-  }
-  
-  test("TRUE AND TRUE AND FALSE") {
-    val output: Option[OutputSymbol] = listener.listen(TRUE_INPUT + TRUE_INPUT + FALSE_INPUT + AND + AND)
-    val expectedOutput = Some(FALSE)
-    
-    assert(output === expectedOutput)
-  }  
-  
-  test("TRUE AND FALSE AND FALSE") {
-    val output: Option[OutputSymbol] = listener.listen(TRUE_INPUT + FALSE_INPUT + FALSE_INPUT + AND + AND)
-    val expectedOutput = Some(FALSE)
-    
-    assert(output === expectedOutput)
-  }
-  
-  test("FALSE AND FALSE AND FALSE") {
-    val output: Option[OutputSymbol] = listener.listen(FALSE_INPUT + FALSE_INPUT + FALSE_INPUT + AND + AND)
-    val expectedOutput = Some(FALSE)
-    
-    assert(output === expectedOutput)
-  }
-  
-  test("FALSE AND FALSE AND") {
-    val output: Option[OutputSymbol] = listener.listen(FALSE_INPUT + FALSE_INPUT + AND + AND)
-    val expectedOutput = None
-    
-    assert(output === expectedOutput)
-  }
+//  test("FALSE OR") {
+//    val output: Option[OutputSymbol] = listener.listen(FALSE_INPUT + OR)
+//    val expectedOutput = None
+//
+//    assert(output === expectedOutput)
+//  }
+//
+//  test("TRUE OR TRUE") {
+//    val output: Option[OutputSymbol] = listener.listen(TRUE_INPUT + TRUE_INPUT + OR)
+//    val expectedOutput = Some(TRUE)
+//
+//    assert(output === expectedOutput)
+//  }
+//
+//  test("FALSE OR FALSE") {
+//    val output: Option[OutputSymbol] = listener.listen(FALSE_INPUT + FALSE_INPUT + OR)
+//    val expectedOutput = Some(FALSE)
+//
+//    assert(output === expectedOutput)
+//  }
+//
+//  test("FALSE OR TRUE") {
+//    val output: Option[OutputSymbol] = listener.listen(TRUE_INPUT + FALSE_INPUT + OR)
+//    val expectedOutput = Some(TRUE)
+//
+//    assert(output === expectedOutput)
+//  }
+//
+//  test("TRUE AND TRUE") {
+//    val output: Option[OutputSymbol] = listener.listen(TRUE_INPUT + TRUE_INPUT + AND)
+//    val expectedOutput = Some(TRUE)
+//
+//    assert(output === expectedOutput)
+//  }
+//
+//  test("FALSE AND FALSE") {
+//    val output: Option[OutputSymbol] = listener.listen(FALSE_INPUT + FALSE_INPUT + AND)
+//    val expectedOutput = Some(FALSE)
+//
+//    assert(output === expectedOutput)
+//  }
+//
+//  test("FALSE AND TRUE") {
+//    val output: Option[OutputSymbol] = listener.listen(FALSE_INPUT + TRUE_INPUT + AND)
+//    val expectedOutput = Some(FALSE)
+//
+//    assert(output === expectedOutput)
+//  }
+//
+//  test("NOT TRUE") {
+//    val output: Option[OutputSymbol] = listener.listen(TRUE_INPUT + NOT)
+//    val expectedOutput = Some(FALSE)
+//
+//    assert(output === expectedOutput)
+//  }
+//
+//  test("NOT FALSE") {
+//    val output: Option[OutputSymbol] = listener.listen(FALSE_INPUT + NOT)
+//    val expectedOutput = Some(TRUE)
+//
+//    assert(output === expectedOutput)
+//  }
+//
+//  test("TRUE NAND TRUE") {
+//    val output: Option[OutputSymbol] = listener.listen(TRUE_INPUT + TRUE_INPUT + NAND)
+//    val expectedOutput = Some(FALSE)
+//
+//    assert(output === expectedOutput)
+//  }
+//
+//  test("TRUE NAND FALSE") {
+//    val output: Option[OutputSymbol] = listener.listen(FALSE_INPUT + TRUE_INPUT + NAND)
+//    val expectedOutput = Some(TRUE)
+//
+//    assert(output === expectedOutput)
+//  }
+//
+//  test("FALSE NAND FALSE") {
+//    val output: Option[OutputSymbol] = listener.listen(FALSE_INPUT + FALSE_INPUT + NAND)
+//    val expectedOutput = Some(TRUE)
+//
+//    assert(output === expectedOutput)
+//  }
+//
+//  test("TRUE NOR TRUE") {
+//    val output: Option[OutputSymbol] = listener.listen(TRUE_INPUT + TRUE_INPUT + NOR)
+//    val expectedOutput = Some(FALSE)
+//
+//    assert(output === expectedOutput)
+//  }
+//
+//  test("TRUE NOR FALSE") {
+//    val output: Option[OutputSymbol] = listener.listen(FALSE_INPUT + TRUE_INPUT + NOR)
+//    val expectedOutput = Some(FALSE)
+//
+//    assert(output === expectedOutput)
+//  }
+//
+//  test("FALSE NOR FALSE") {
+//    val output: Option[OutputSymbol] = listener.listen(FALSE_INPUT + FALSE_INPUT + NOR)
+//    val expectedOutput = Some(TRUE)
+//
+//    assert(output === expectedOutput)
+//  }
+//
+//  test("TRUE AND TRUE AND TRUE") {
+//    val output: Option[OutputSymbol] = listener.listen(TRUE_INPUT + TRUE_INPUT + TRUE_INPUT + AND + AND)
+//    val expectedOutput = Some(TRUE)
+//
+//    assert(output === expectedOutput)
+//  }
+//
+//  test("TRUE AND TRUE AND FALSE") {
+//    val output: Option[OutputSymbol] = listener.listen(TRUE_INPUT + TRUE_INPUT + FALSE_INPUT + AND + AND)
+//    val expectedOutput = Some(FALSE)
+//
+//    assert(output === expectedOutput)
+//  }
+//
+//  test("TRUE AND FALSE AND FALSE") {
+//    val output: Option[OutputSymbol] = listener.listen(TRUE_INPUT + FALSE_INPUT + FALSE_INPUT + AND + AND)
+//    val expectedOutput = Some(FALSE)
+//
+//    assert(output === expectedOutput)
+//  }
+//
+//  test("FALSE AND FALSE AND FALSE") {
+//    val output: Option[OutputSymbol] = listener.listen(FALSE_INPUT + FALSE_INPUT + FALSE_INPUT + AND + AND)
+//    val expectedOutput = Some(FALSE)
+//
+//    assert(output === expectedOutput)
+//  }
+//
+//  test("FALSE AND FALSE AND") {
+//    val output: Option[OutputSymbol] = listener.listen(FALSE_INPUT + FALSE_INPUT + AND + AND)
+//    val expectedOutput = None
+//
+//    assert(output === expectedOutput)
+//  }
 }
 
 

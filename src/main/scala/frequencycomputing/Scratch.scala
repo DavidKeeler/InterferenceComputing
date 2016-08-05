@@ -5,49 +5,30 @@ import quisp.SeriesData
 import quisp.Point
 
 object Scratch {
-   private val trueFreq = 1.0
-   private val falseFreq = 1.1
    
-   private val range = 120.0
-   private val chartRange = Range.Double(0.0, range, 2 * range/1000)
-   
-   private val TRUE = sine(trueFreq, 0)
-   private val FALSE = sine(falseFreq, 0)
-   
-   private val OR = sine(falseFreq, Math.PI)
-   private val AND = sine(trueFreq, Math.PI)
-   private val NOT = sine(trueFreq, Math.PI) + sine(falseFreq, Math.PI)
-   
-   private val NAND = AND + NOT
-   private val NOR = OR + NOT
+   private val range: Double = Math.PI
+   private val chartRange = Range.Double(0.0, range, range/1000)
    
 	def main(args: Array[String]) {
-	  val funct = data(sine(1.0, 0) + sine(1.01, 0))
-//	  val otherFunct = data(FALSE)
-	  
-	  val chart = Plot.line(funct)
+	  val s1 = Input(100, 0.0)
+	  val s2 = Input(115, 0.0)
+
+	  val c1 = Input(78, 0.0)
+	  val c2 = Input(112, 0.0)
+	  val c = Control(c1, c2)
+
+	  val swap = CSwap(s1, s2, c)
+	  val chart = Plot.line(data(s1))
 //	    .addSeries(otherFunct)
-//	    .series(0).name("TRUE + FALSE")
-//	    .series(1).name("TRUE")
-	    .yAxis.range(-2, 2)
+	    .yAxis.range(-8, 8)
+
+    val time = 0
+    val output = new LeastSquaresListener(100, 115)
+    val sym = output.listen(s2.toFunc, time)
+    println(sym)
 	}
-   
-   private implicit def functionToAdditiveFunction(f: Double=>Double): AdditiveFunction = new AdditiveFunction(f)
-   
-   private class AdditiveFunction(private val f: Double=>Double) extends (Double=>Double) {
-     override def apply(x: Double): Double = f(x)
-     
-     def +(that: Double=>Double): AdditiveFunction = {
-       x: Double => this(x) + that(x)
-     }
-   }
-   
-   private def sine(freq: Double, phase: Double): Double=>Double = {
-     val normedFreq = 2 * Math.PI * freq
-     x: Double => Math.sin(normedFreq * x + phase)
-   }
 	
-	private def data(funct: Double=>Double): SeriesData = {
+	private def data(funct: Operation): SeriesData = {
 	  val functPoints = 
 		  for (x <- chartRange) yield {
 		    new Point {

@@ -16,7 +16,7 @@ case object FALSE extends OutputSymbol
  * a frequency is recognized.
  */
 trait OutputListener {
-  def listen(outputWave: Double=>Double): Option[OutputSymbol]
+  def listen(outputWave: Double=>Double, time: Double): Option[OutputSymbol]
 }
 
 class LeastSquaresListener(
@@ -31,9 +31,9 @@ class LeastSquaresListener(
   private val trueFunct = new SinFunct(trueFrequency)
   private val falseFunct = new SinFunct(falseFrequency)
   
-  def listen(outputWave: Double=>Double): Option[OutputSymbol] = {
-    val (trueAmplitude, truePhase, trueFit) = meanSqError(outputWave, trueFunct)
-    val (falseAmplitude, falsePhase, falseFit) = meanSqError(outputWave, falseFunct)
+  def listen(outputWave: Double=>Double, time: Double): Option[OutputSymbol] = {
+    val (trueAmplitude, truePhase, trueFit) = meanSqError(outputWave, trueFunct, time)
+    val (falseAmplitude, falsePhase, falseFit) = meanSqError(outputWave, falseFunct, time)
     
 	if (trueFit/falseFit > threshold) Some(FALSE)
     else if (falseFit/trueFit > threshold) Some(TRUE)
@@ -45,10 +45,14 @@ class LeastSquaresListener(
    */
   private def meanSqError(
       outputWave: Double=>Double, 
-      target: ParametricUnivariateFunction): (Double, Double, Double) = {  
+      target: ParametricUnivariateFunction,
+      time: Double): (Double, Double, Double) = {
     
     val points = new WeightedObservedPoints
-    for (x <- minX to maxX by (maxX - minX)/10000) 
+    val startTime = minX + time
+    val endTime = maxX + time
+    val stepSize = (maxX - minX)/10000
+    for (x <- startTime to endTime by stepSize)
       points.add(x, outputWave(x))
     
     // Find the best fit for the amplitude and phase
