@@ -6,7 +6,8 @@ lazy val root = (project in file(".")).
   )
 
 libraryDependencies ++= Seq(
-  "com.github.rodneykinney" %%  "quisp" % "0.6.0"
+  "com.github.rodneykinney" %%  "quisp" % "0.6.0",
+  "org.scalatest" %% "scalatest" % "2.2.4" % "test"
 //  "jfree" %% "jfreechart" % "1.0.19"
 )
 
@@ -17,3 +18,4 @@ libraryDependencies += "org.jfree" % "jfreechart" % "1.0.17"
 //libraryDependencies += "org.apache.commons" % "commons" % "1.3.2"
 
 libraryDependencies += "org.apache.commons" % "commons-math3" % "3.5"
+

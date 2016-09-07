@@ -1,4 +1,4 @@
-  package frequencycomputing
+  package scratch
 
   import javax.swing.JFrame
   import org.jfree.chart.JFreeChart

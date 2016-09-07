@@ -1,4 +1,4 @@
-package frequencycomputing
+package scratch
 
 import scala.collection._
 

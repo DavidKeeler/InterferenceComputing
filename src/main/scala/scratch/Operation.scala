@@ -1,4 +1,4 @@
-package frequencycomputing
+package scratch
 
 abstract class Operation {
   def name: String
@@ -9,7 +9,7 @@ abstract class Operation {
   }
 }
 
-case class Input(freq: Double, phase: Double) extends Operation {
+case class Input(freq: Double, phase: Double=0.0) extends Operation {
   def name = "Input"
   def apply(t: Double): Double = {
     Math.cos(freq * t + phase)
