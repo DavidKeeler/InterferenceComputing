@@ -6,7 +6,7 @@ import quisp.Point
 
 import scala.collection.immutable.NumericRange
 
-object Scratch {
+object ScratchPad {
    
 	def main(args: Array[String]) {
 	  val s1 = Input(1, 0.0)
