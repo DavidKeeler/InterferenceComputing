@@ -11,61 +11,51 @@ import org.apache.commons.math3.fitting.SimpleCurveFitter
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
-sealed trait OutputSymbol
-case object TRUE extends OutputSymbol
-case object FALSE extends OutputSymbol
+trait OutputSymbol
+case object True extends OutputSymbol
+case object False extends OutputSymbol
+
 
 /**
  * Listens to the output wave and writes to the output strip, if 
  * a frequency is recognized.
  */
 trait OutputListener {
-  def listen(outputWave: Double=>Double, time: Double): Option[OutputSymbol]
-  def extermePoints(outputWave: Double=>Double, time: Double): Seq[(Double, Double)]
+  def listen(outputWave: Operation, time: Double): Option[OutputSymbol]
+  def extermePoints(outputWave: Operation, time: Double, targetFreq: Double): Seq[(Double, Double)]
 }
 
-class LeastSquaresListener(
-    val trueFrequency: Double, 
-    val falseFrequency: Double,
-    val periods: Double = 10.0) extends OutputListener {
+class ShittyEstimateListener (
+    val trueFrequencies: Seq[Double],
+    val falseFrequencies: Seq[Double]) extends OutputListener {
 
-  val error = 0.01 * (trueFrequency + falseFrequency)/2
-  def startTime(time: Double) = time - 2 * periods/(trueFrequency + falseFrequency)
-  def endTime(time: Double) = time + 2 * periods/(trueFrequency + falseFrequency)
+  private val numSamples = 10000
+  def listen(operation: Operation, time: Double): Option[OutputSymbol] = {
+    val trueOutput = trueFrequencies.map(listen(operation.f, time, _)).foldLeft(false)(_ || _)
+    val falseOutput = falseFrequencies.map(listen(operation.f, time, _)).foldLeft(false)(_ || _)
 
-  def listen(outputWave: Double=>Double, time: Double): Option[OutputSymbol] = {
-    val estFreq = estimateFrequency(outputWave, time)
-    println("estFreq: " + estFreq)
+    if (trueOutput && falseOutput)
+      throw new SomeoneFuckUpException()
 
-	  if (Math.abs(estFreq - trueFrequency) < error) Some(TRUE)
-    else if (Math.abs(estFreq - falseFrequency) < error) Some(FALSE)
+    if (trueOutput) Some(True)
+    else if (falseOutput) Some(False)
     else None
   }
 
-  private def estimateFrequency(outputWave: Double=>Double, time: Double): Double = {
+  def extermePoints(operation: Operation, time: Double, frequency: Double): Seq[(Double, Double)] = {
+    val timeDelta = 10/frequency
+    getExtremes(operation.f, time, timeDelta)
+  }
 
-    val rand = new Random
-    val xValues = for (i <- 0 until 10000) yield {
-      (endTime(time) - startTime(time)) * rand.nextDouble + startTime((time))
-    }
-    val allPoints = for (x <- xValues.sorted) yield {
-      val y = outputWave(x)
-      (x, y)
-    }
+  private def listen(outputWave: Double=>Double, time: Double, frequency: Double): Boolean = {
+    val error = 0.01 * frequency
+    val timeDelta = 10/frequency
+    val estFreq = estimateFrequency(outputWave, time, timeDelta)
+	  Math.abs(estFreq - frequency) < error
+  }
 
-    val threshold = 0.5
-    val cutpoints = maxCutpoints(allPoints, threshold) ++ minCutpoints(allPoints, -threshold)
-    val estimatedExtremePts = cutpoints.sortBy(_._1).map {
-      case (begin, end) => allPoints.slice(begin, end)
-    }.map {
-      points =>
-        if (points.head._2 >= threshold)
-          (points.map(_._1).sum/points.size, points.map(_._2).max)
-        else
-          (points.map(_._1).sum/points.size, points.map(_._2).min)
-    }
-
-    val estWaveLenths = estimatedExtremePts.map(_._1).sliding(2).toSeq.map {
+  private def estimateFrequency(outputWave: Double=>Double, time: Double, timeDelta: Double): Double = {
+    val estWaveLenths = getExtremes(outputWave, time, timeDelta).map(_._1).sliding(2).toSeq.map {
       case Seq(x1, x2) => 2 * (x2 - x1)
     }
     val estWaveLength = estWaveLenths.sum/estWaveLenths.size
@@ -73,10 +63,12 @@ class LeastSquaresListener(
     1.0/estWaveLength
   }
 
-  def extermePoints(outputWave: Double=>Double, time: Double): Seq[(Double, Double)] = {
+  private def getExtremes(outputWave: Double=>Double, time: Double, timeDelta: Double): Seq[(Double, Double)] = {
+    val startTime = time - timeDelta
+    val endTime = time + timeDelta
     val rand = new Random
-    val xValues = for (i <- 0 until 10000) yield {
-      (endTime(time) - startTime(time)) * rand.nextDouble + startTime((time))
+    val xValues = for (i <- 0 until numSamples) yield {
+      (endTime - startTime) * rand.nextDouble + startTime
     }
     val allPoints = for (x <- xValues.sorted) yield {
       val y = outputWave(x)
@@ -107,8 +99,11 @@ class LeastSquaresListener(
       else None
     }
 
+    if (leadingPtOpts.flatten.isEmpty || trailingPtOpts.flatten.isEmpty)
+      return Seq()
+
     val trailingPoints =
-      if (leadingPtOpts.flatten.head > trailingPtOpts.flatten.head) trailingPtOpts.flatten.tail
+      if (leadingPtOpts.flatten.head > trailingPtOpts.flatten.toList.head) trailingPtOpts.flatten.tail
       else trailingPtOpts.flatten
     val leadingPoints =
       if (trailingPtOpts.flatten.last < leadingPtOpts.flatten.last) leadingPtOpts.flatten.dropRight(1)
@@ -127,6 +122,9 @@ class LeastSquaresListener(
       else None
     }
 
+    if (leadingPtOpts.flatten.isEmpty || trailingPtOpts.flatten.isEmpty)
+      return Seq()
+
     val trailingPoints =
       if (leadingPtOpts.flatten.head > trailingPtOpts.flatten.head) trailingPtOpts.flatten.tail
       else trailingPtOpts.flatten
@@ -137,3 +135,5 @@ class LeastSquaresListener(
     leadingPoints zip trailingPoints
   }
 }
+
+class SomeoneFuckUpException extends Exception("Was it you?")

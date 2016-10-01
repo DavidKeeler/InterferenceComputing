@@ -4,7 +4,7 @@ abstract class Operation {
   def name: String
   def apply(t: Double): Double
 
-  def toFunc: (Double=>Double) = {
+  def f: (Double=>Double) = {
     t: Double => this(t)
   }
 }
@@ -12,7 +12,7 @@ abstract class Operation {
 case class Input(freq: Double, phase: Double=0.0) extends Operation {
   def name = "Input"
   def apply(t: Double): Double = {
-    Math.cos(freq * t + phase)
+    Math.cos(2 * Math.PI * freq * t + phase)
   }
 }
 
