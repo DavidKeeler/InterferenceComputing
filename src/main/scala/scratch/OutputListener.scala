@@ -11,7 +11,7 @@ import org.apache.commons.math3.fitting.SimpleCurveFitter
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
-trait OutputSymbol
+abstract class OutputSymbol
 case object True extends OutputSymbol
 case object False extends OutputSymbol
 
@@ -27,30 +27,32 @@ trait OutputListener {
 
 class ShittyEstimateListener (
     val trueFrequencies: Seq[Double],
-    val falseFrequencies: Seq[Double]) extends OutputListener {
+    val falseFrequencies: Seq[Double],
+    val sampleWavelengths: Double = 10.0) extends OutputListener {
 
   private val numSamples = 10000
   def listen(operation: Operation, time: Double): Option[OutputSymbol] = {
-    val trueOutput = trueFrequencies.map(listen(operation.f, time, _)).foldLeft(false)(_ || _)
-    val falseOutput = falseFrequencies.map(listen(operation.f, time, _)).foldLeft(false)(_ || _)
+    val hasTrueOutput = trueFrequencies.map(listen(operation.f, time, _)).foldLeft(false)(_ || _)
+    val hasFalseOutput = falseFrequencies.map(listen(operation.f, time, _)).foldLeft(false)(_ || _)
 
-    if (trueOutput && falseOutput)
-      throw new SomeoneFuckUpException()
+    if (hasTrueOutput && hasFalseOutput)
+      throw new SomeoneFuckedUpException()
 
-    if (trueOutput) Some(True)
-    else if (falseOutput) Some(False)
+    if (hasTrueOutput) Some(True)
+    else if (hasFalseOutput) Some(False)
     else None
   }
 
   def extermePoints(operation: Operation, time: Double, frequency: Double): Seq[(Double, Double)] = {
-    val timeDelta = 10/frequency
+    val timeDelta = sampleWavelengths/frequency
     getExtremes(operation.f, time, timeDelta)
   }
 
   private def listen(outputWave: Double=>Double, time: Double, frequency: Double): Boolean = {
     val error = 0.01 * frequency
-    val timeDelta = 10/frequency
+    val timeDelta = sampleWavelengths/frequency
     val estFreq = estimateFrequency(outputWave, time, timeDelta)
+println("estFreq: " + estFreq + " frequency: " + frequency + " error: " + error)
 	  Math.abs(estFreq - frequency) < error
   }
 
@@ -66,6 +68,7 @@ class ShittyEstimateListener (
   private def getExtremes(outputWave: Double=>Double, time: Double, timeDelta: Double): Seq[(Double, Double)] = {
     val startTime = time - timeDelta
     val endTime = time + timeDelta
+
     val rand = new Random
     val xValues = for (i <- 0 until numSamples) yield {
       (endTime - startTime) * rand.nextDouble + startTime
@@ -75,7 +78,7 @@ class ShittyEstimateListener (
       (x, y)
     }
 
-    val threshold = 0.5
+    val threshold = 0.5   // TODO: make configuration param
     val cutpoints = maxCutpoints(allPoints, threshold) ++ minCutpoints(allPoints, -threshold)
     cutpoints.sortBy(_._1).map {
       case (begin, end) => allPoints.slice(begin, end)
@@ -136,4 +139,4 @@ class ShittyEstimateListener (
   }
 }
 
-class SomeoneFuckUpException extends Exception("Was it you?")
+class SomeoneFuckedUpException extends Exception("Was it you?")

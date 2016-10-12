@@ -17,16 +17,15 @@ case class Input(freq: Double, phase: Double=0.0) extends Operation {
 }
 
 case class Control(c1: Input, c2: Input) extends Operation {
-
   def name = "Control"
   def apply(t: Double): Double = {
     c1(t) + c2(t)
   }
 }
 
-case class CSwap(s1: Input, s2: Input, c: Control) extends Operation {
-  def name = "Controled Swap"
+case class ControlledSwap(in1: Input, in2: Input, c: Control) extends Operation {
+  def name = "Controlled Swap"
   def apply(t: Double): Double  = {
-    s1(t) + s2(t) + c(t)
+    in1(t) + in2(t) + c(t)
   }
 }

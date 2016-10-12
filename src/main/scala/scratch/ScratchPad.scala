@@ -7,32 +7,32 @@ import quisp.Point
 import scala.collection.immutable.NumericRange
 
 object ScratchPad {
+  val range = 80.0
+  val chartRange = Range.Double(0.0, range, range/1000)
    
 	def main(args: Array[String]) {
-	  val s1 = Input(1, 0.0)
-	  val s2 = Input(11, 0.0)
+	  val in1 = Input(1.025, 0.0)
+	  val in2 = Input(1.0, 0.0)
+	  val otherControl = Control(in1, in2)
 
-	  val c1 = Input(15, 0.0)
-	  val c2 = Input(16, 0.0)
-	  val c = Control(c1, c2)
+    val c1 = Input(1.0, 0.0)
+    val c2 = Input(1.05, 0.0)
+	  val control = Control(c1, c2)
+	  val swap = ControlledSwap(in1, in2, control)
 
-	  val swap = CSwap(s1, s2, c)
-	  val operation = s1
+    doStuff(operation = swap, time = 20.0, trueFrequencies = Seq(1.025), falseFrequencies = Seq(1.05))
+	}
 
-    val time = 0.0
-    val trueFrequencies = Seq(100.0)
-    val falseFrequencies = Seq(120.0)
-    val listener = new ShittyEstimateListener(trueFrequencies, falseFrequencies)
+	private def doStuff(operation: Operation, time: Double, trueFrequencies: Seq[Double], falseFrequencies: Seq[Double]) {
+    val listener = new ShittyEstimateListener(trueFrequencies, falseFrequencies, 10.0)
 
     val outputSymbol = listener.listen(operation, time)
     println("OUTPUT: " + outputSymbol)
 
     display(operation, listener, time, trueFrequencies.head)
-	}
+  }
 
 	private def display(operation: Operation, listener: OutputListener, time: Double, referenceFrequency: Double) {
-    val range = 1.0
-    val chartRange = Range.Double(-range, range, range/1000)
     Plot.line(data(operation, chartRange))
       .addSeries(extermePoints(listener, operation, time, referenceFrequency))
       .yAxis.range(-4, 4)
