@@ -1,5 +1,7 @@
 package scratch
 
+import java.util.Random
+
 import quisp.Plot
 import quisp.SeriesData
 import quisp.Point
@@ -7,24 +9,25 @@ import quisp.Point
 import scala.collection.immutable.NumericRange
 
 object ScratchPad {
-  val range = 80.0
-  val chartRange = Range.Double(0.0, range, range/1000)
-   
+  val minRange = 0.0
+  val maxRange = 30.0
+  val numGraphPoints = 10000
+
 	def main(args: Array[String]) {
-	  val in1 = Input(1.025, 0.0)
-	  val in2 = Input(1.0, 0.0)
+	  val in1 = Input(10.025, 0.0)
+	  val in2 = Input(10.0, 0.0)
 	  val otherControl = Control(in1, in2)
 
-    val c1 = Input(1.0, 0.0)
-    val c2 = Input(1.05, 0.0)
+    val c1 = Input(20.0, 0.0)
+    val c2 = Input(20.05, 0.0)
 	  val control = Control(c1, c2)
 	  val swap = ControlledSwap(in1, in2, control)
 
-    doStuff(operation = swap, time = 20.0, trueFrequencies = Seq(1.025), falseFrequencies = Seq(1.05))
+    doStuff(operation = swap, time = 20.0, trueFrequencies = Seq(10.025), falseFrequencies = Seq(20.05))
 	}
 
 	private def doStuff(operation: Operation, time: Double, trueFrequencies: Seq[Double], falseFrequencies: Seq[Double]) {
-    val listener = new ShittyEstimateListener(trueFrequencies, falseFrequencies, 10.0)
+    val listener = new ShittyEstimateListener(trueFrequencies, falseFrequencies, 7.0)
 
     val outputSymbol = listener.listen(operation, time)
     println("OUTPUT: " + outputSymbol)
@@ -33,14 +36,18 @@ object ScratchPad {
   }
 
 	private def display(operation: Operation, listener: OutputListener, time: Double, referenceFrequency: Double) {
-    Plot.line(data(operation, chartRange))
+    val rand = new Random
+	  val randomPoints = for (i <- 0 to numGraphPoints) yield {
+      (maxRange - minRange) * rand.nextDouble + minRange
+    }
+    Plot.line(data(operation, randomPoints))
       .addSeries(extermePoints(listener, operation, time, referenceFrequency))
       .yAxis.range(-4, 4)
   }
 	
-	private def data(operation: Operation, chartRange: NumericRange[Double]): SeriesData = {
+	private def data(operation: Operation, randomPoints: Seq[Double]): SeriesData = {
 	  val functPoints = 
-		  for (x <- chartRange) yield {
+		  for (x <- randomPoints) yield {
 		    new Point {
 		      def X = Some(x)
 		      def Y = Some(operation(x))

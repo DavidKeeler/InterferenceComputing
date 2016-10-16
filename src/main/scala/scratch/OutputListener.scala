@@ -49,7 +49,7 @@ class ShittyEstimateListener (
   }
 
   private def listen(outputWave: Double=>Double, time: Double, frequency: Double): Boolean = {
-    val error = 0.01 * frequency
+    val error = 0.02 * frequency
     val timeDelta = sampleWavelengths/frequency
     val estFreq = estimateFrequency(outputWave, time, timeDelta)
 println("estFreq: " + estFreq + " frequency: " + frequency + " error: " + error)
