@@ -35,16 +35,16 @@ class OutputListenerTest extends FunSuite {
   }
 
   test("a beat between beats") {
-    val c1 = Input(1.0, 0.0)
-    val c2 = Input(1.05, 0.0)
-    val c = Control(c1, c2)
+    val in1 = Input(20.025, 0.0)
+    val in2 = Input(20.0, 0.0)
 
-    val in1 = Input(1.0, 0.0)
-    val in2 = Input(1.1, 0.0)
-    val cswap = ControlledSwap(in1, in2, c)
+    val c1 = Input(10.0, 0.0)
+    val c2 = Input(10.05, 0.0)
+    val control = Control(c1, c2)
+    val swap = ControlledSwap(in1, in2, control)
 
-    val listener = new ShittyEstimateListener(trueFrequencies = Seq(1.025), falseFrequencies = Seq(1.05), sampleWavelengths = 5.0)
-    val output: Option[OutputSymbol] = listener.listen(cswap, 10.0)
+    val listener = new ShittyEstimateListener(trueFrequencies = Seq(10.025), falseFrequencies = Seq(20.05), sampleWavelengths = 10.0)
+    val output: Option[OutputSymbol] = listener.listen(swap, 10.0)
     val expectedOutput = Some(False)
 
     assert(output === expectedOutput)

@@ -10,24 +10,24 @@ import scala.collection.immutable.NumericRange
 
 object ScratchPad {
   val minRange = 0.0
-  val maxRange = 30.0
+  val maxRange = 80.0
   val numGraphPoints = 10000
 
 	def main(args: Array[String]) {
-	  val in1 = Input(10.025, 0.0)
-	  val in2 = Input(10.0, 0.0)
-	  val otherControl = Control(in1, in2)
+    val in1 = Input(20.025, 0.0)
+    val in2 = Input(20.0, 0.0)
+    val otherControl = Control(in1, in2)
 
-    val c1 = Input(20.0, 0.0)
-    val c2 = Input(20.05, 0.0)
-	  val control = Control(c1, c2)
-	  val swap = ControlledSwap(in1, in2, control)
+    val c1 = Input(10.0, 0.0)
+    val c2 = Input(10.05, 0.0)
+    val control = Control(c1, c2)
+    val swap = ControlledSwap(in1, in2, control)
 
     doStuff(operation = swap, time = 20.0, trueFrequencies = Seq(10.025), falseFrequencies = Seq(20.05))
 	}
 
 	private def doStuff(operation: Operation, time: Double, trueFrequencies: Seq[Double], falseFrequencies: Seq[Double]) {
-    val listener = new ShittyEstimateListener(trueFrequencies, falseFrequencies, 7.0)
+    val listener = new ShittyEstimateListener(trueFrequencies, falseFrequencies, 10.0)
 
     val outputSymbol = listener.listen(operation, time)
     println("OUTPUT: " + outputSymbol)
@@ -47,7 +47,7 @@ object ScratchPad {
 	
 	private def data(operation: Operation, randomPoints: Seq[Double]): SeriesData = {
 	  val functPoints = 
-		  for (x <- randomPoints) yield {
+		  for (x <- randomPoints.sorted) yield {
 		    new Point {
 		      def X = Some(x)
 		      def Y = Some(operation(x))
