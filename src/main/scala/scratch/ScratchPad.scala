@@ -6,24 +6,40 @@ import quisp.Plot
 import quisp.SeriesData
 import quisp.Point
 
-import scala.collection.immutable.NumericRange
-
 object ScratchPad {
   val minRange = 0.0
-  val maxRange = 80.0
+  val maxRange = 40.0
   val numGraphPoints = 10000
 
 	def main(args: Array[String]) {
-    val in1 = Input(20.025, 0.0)
-    val in2 = Input(20.0, 0.0)
-    val otherControl = Control(in1, in2)
+    val trueFreq1 = 7.525
+    val trueFreq2 = 7.525
+    val falseFreq1 = 7.5
+    val falseFreq2 = 7.5
 
-    val c1 = Input(10.0, 0.0)
-    val c2 = Input(10.05, 0.0)
-    val control = Control(c1, c2)
-    val swap = ControlledSwap(in1, in2, control)
+    val i_t = 2
+    val i_f = 3
+    val j_t = 5
+    val j_f = 7
+    val k_t = 11
+    val k_f = 13
+    val m_t = 17
+    val m_f = 21
 
-    doStuff(operation = swap, time = 20.0, trueFrequencies = Seq(10.025), falseFrequencies = Seq(20.05))
+    val controlTrue = ControlledSwap.controlTrue(trueFreq1, trueFreq2, falseFreq1, falseFreq2, i_t, i_f, j_t, j_f, k_t, k_f, m_t, m_f)
+    val controlFalse = ControlledSwap.controlFalse(trueFreq1, trueFreq2, falseFreq1, falseFreq2, i_t, i_f, j_t, j_f, k_t, k_f, m_t, m_f)
+    val time1 = ControlledSwap.firstPeriod(trueFreq1, trueFreq2, falseFreq1, falseFreq2, i_t, i_f, j_t, j_f, k_t, k_f, m_t, m_f)
+    val time2 = ControlledSwap.secondPeriod(trueFreq1, trueFreq2, falseFreq1, falseFreq2, i_t, i_f, j_t, j_f, k_t, k_f, m_t, m_f)
+
+    val Control(outTrue1, outTrue2) = ControlledSwap.outputTrue(trueFreq1, trueFreq2, falseFreq1, falseFreq2, i_t, i_f, j_t, j_f, k_t, k_f, m_t, m_f)
+    val Control(outFalse1, outFalse2) = ControlledSwap.outputFalse(trueFreq1, trueFreq2, falseFreq1, falseFreq2, i_t, i_f, j_t, j_f, k_t, k_f, m_t, m_f)
+
+    val in1 = Input(trueFreq1)
+    val in2 = Input(falseFreq2)
+
+    val swap = ControlledSwap(in1, in2, controlTrue)
+
+    doStuff(operation = swap, time = time1, trueFrequencies = Seq(outTrue1.freq, outTrue2.freq), falseFrequencies = Seq(outFalse1.freq, outFalse2.freq))
 	}
 
 	private def doStuff(operation: Operation, time: Double, trueFrequencies: Seq[Double], falseFrequencies: Seq[Double]) {
@@ -32,17 +48,27 @@ object ScratchPad {
     val outputSymbol = listener.listen(operation, time)
     println("OUTPUT: " + outputSymbol)
 
-    display(operation, listener, time, trueFrequencies.head)
+    display1(operation, listener, time, trueFrequencies.head)
   }
 
-	private def display(operation: Operation, listener: OutputListener, time: Double, referenceFrequency: Double) {
-    val rand = new Random
-	  val randomPoints = for (i <- 0 to numGraphPoints) yield {
-      (maxRange - minRange) * rand.nextDouble + minRange
-    }
-    Plot.line(data(operation, randomPoints))
+	private def display1(operation: Operation, listener: OutputListener, time: Double, referenceFrequency: Double) {
+    Plot.line(data(operation, randXValues))
       .addSeries(extermePoints(listener, operation, time, referenceFrequency))
       .yAxis.range(-4, 4)
+  }
+
+  private def display2(op1: Operation, op2: Operation, listener: OutputListener, time: Double, referenceFrequency: Double) {
+    Plot.line(data(op1, randXValues))
+      .addSeries(data(op2, randXValues))
+      .addSeries(extermePoints(listener, op1, time, referenceFrequency))
+      .yAxis.range(-4, 4)
+  }
+
+  private def randXValues: Seq[Double] = {
+    val rand = new Random
+    for (i <- 0 to numGraphPoints) yield {
+      (maxRange - minRange) * rand.nextDouble + minRange
+    }
   }
 	
 	private def data(operation: Operation, randomPoints: Seq[Double]): SeriesData = {

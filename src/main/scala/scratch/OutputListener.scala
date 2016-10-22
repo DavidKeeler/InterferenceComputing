@@ -52,6 +52,7 @@ class ShittyEstimateListener (
     val error = 0.02 * frequency
     val timeDelta = sampleWavelengths/frequency
     val estFreq = estimateFrequency(outputWave, time, timeDelta)
+
 	  Math.abs(estFreq - frequency) < error
   }
 
