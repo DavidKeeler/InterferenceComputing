@@ -7,76 +7,64 @@ import quisp.SeriesData
 import quisp.Point
 
 object ScratchPad {
-  val minRange = 0.0
-  val maxRange = 40.0
   val numGraphPoints = 10000
 
 	def main(args: Array[String]) {
-    val trueFreq1 = 7.525
-    val trueFreq2 = 7.525
-    val falseFreq1 = 7.5
-    val falseFreq2 = 7.5
+	  val scale = 50.0
+    val trueFreq1 = scale
+    val falseFreq1 = scale + 4
 
-    val i_t = 2
-    val i_f = 3
-    val j_t = 5
-    val j_f = 7
-    val k_t = 11
-    val k_f = 13
-    val m_t = 17
-    val m_f = 21
+    val falseFreq2 = scale + 30
+    val trueFreq2 = scale + 30
 
-    val controlTrue = ControlledSwap.controlTrue(trueFreq1, trueFreq2, falseFreq1, falseFreq2, i_t, i_f, j_t, j_f, k_t, k_f, m_t, m_f)
-    val controlFalse = ControlledSwap.controlFalse(trueFreq1, trueFreq2, falseFreq1, falseFreq2, i_t, i_f, j_t, j_f, k_t, k_f, m_t, m_f)
-    val time1 = ControlledSwap.firstPeriod(trueFreq1, trueFreq2, falseFreq1, falseFreq2, i_t, i_f, j_t, j_f, k_t, k_f, m_t, m_f)
-    val time2 = ControlledSwap.secondPeriod(trueFreq1, trueFreq2, falseFreq1, falseFreq2, i_t, i_f, j_t, j_f, k_t, k_f, m_t, m_f)
+    val controlFalse = Control(con1 = scale + 2, des1 = scale + 26, con2 = scale + 28, des2 = scale + 8, 1.0)
+//    val controlTrue = Control(c12, c21, scale + 28, scale - 1, 1.0)
 
-    val Control(outTrue1, outTrue2) = ControlledSwap.outputTrue(trueFreq1, trueFreq2, falseFreq1, falseFreq2, i_t, i_f, j_t, j_f, k_t, k_f, m_t, m_f)
-    val Control(outFalse1, outFalse2) = ControlledSwap.outputFalse(trueFreq1, trueFreq2, falseFreq1, falseFreq2, i_t, i_f, j_t, j_f, k_t, k_f, m_t, m_f)
+    val swapFalse = ControlledSwap(falseFreq1, falseFreq2, controlFalse)
+//    val swapTrue = ControlledSwap(in1, in2, controlTrue)
 
-    val in1 = Input(trueFreq1)
-    val in2 = Input(falseFreq2)
 
-    val swap = ControlledSwap(in1, in2, controlTrue)
+    // Are the output values right?
+//    val outFalse1 = Math.abs(falseFreq1 + c11)/2
+//    val outTrue1 = Math.abs(trueFreq1 + c11)/2
+//
+//    val outFalse2 = Math.abs(falseFreq2 + c22)/2
+//    val outTrue2 = Math.abs(trueFreq2 + c22)/2
 
-    doStuff(operation = swap, time = time1, trueFrequencies = Seq(outTrue1.freq, outTrue2.freq), falseFrequencies = Seq(outFalse1.freq, outFalse2.freq))
+//    listen(operation = swapFalse, times = Seq(1.0), trueFrequencies = Seq(outTrue1, outTrue2), falseFrequencies = Seq(outFalse1, outFalse2))
+    display(swapFalse)
 	}
 
-	private def doStuff(operation: Operation, time: Double, trueFrequencies: Seq[Double], falseFrequencies: Seq[Double]) {
+	private def listen(operation: Operation, times: Seq[Double], trueFrequencies: Seq[Double], falseFrequencies: Seq[Double]) {
     val listener = new ShittyEstimateListener(trueFrequencies, falseFrequencies, 10.0)
-
-    val outputSymbol = listener.listen(operation, time)
-    println("OUTPUT: " + outputSymbol)
-
-    display1(operation, listener, time, trueFrequencies.head)
+    val outputSymbols = times.map(time => listener.listen(operation, time))
+    println("OUTPUT: " + outputSymbols.mkString(", ") + " at times: " + times.mkString(","))
   }
 
-	private def display1(operation: Operation, listener: OutputListener, time: Double, referenceFrequency: Double) {
-    Plot.line(data(operation, randXValues))
-      .addSeries(extermePoints(listener, operation, time, referenceFrequency))
-      .yAxis.range(-4, 4)
-  }
+	private def display(swap: ControlledSwap) {
 
-  private def display2(op1: Operation, op2: Operation, listener: OutputListener, time: Double, referenceFrequency: Double) {
-    Plot.line(data(op1, randXValues))
-      .addSeries(data(op2, randXValues))
-      .addSeries(extermePoints(listener, op1, time, referenceFrequency))
-      .yAxis.range(-4, 4)
+    val beat1 = HalfASwap(swap.in1, swap.c, true)
+    val beat2 = HalfASwap(swap.in2, swap.c, false)
+    Plot.line(data(beat1.f, randXValues))
+      .addSeries(data(beat2.f, randXValues))
+      .yAxis.range(-3, 3)
   }
 
   private def randXValues: Seq[Double] = {
+    val minRange = 0.0
+    val maxRange = 2.0
     val rand = new Random
     for (i <- 0 to numGraphPoints) yield {
       (maxRange - minRange) * rand.nextDouble + minRange
     }
   }
 	
-	private def data(operation: Operation, randomPoints: Seq[Double]): SeriesData = {
+	private def data(f: Double=>Double, randomPoints: Seq[Double]): SeriesData = {
 	  val functPoints = 
 		  for (x <- randomPoints.sorted) yield {
 		    new Point {
 		      def X = Some(x)
-		      def Y = Some(operation(x))
+		      def Y = Some(f(x))
 		      def Name = None
 		    }
 		  }
