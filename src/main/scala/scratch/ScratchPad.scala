@@ -10,18 +10,25 @@ object ScratchPad {
   val numGraphPoints = 10000
 
 	def main(args: Array[String]) {
-	  val scale = 50.0
+	  val scale = 75.0
+
     val trueFreq1 = scale
     val falseFreq1 = scale + 4
 
-    val falseFreq2 = scale + 30
     val trueFreq2 = scale + 30
+    val falseFreq2 = scale + 34
 
     val controlFalse = Control(con1 = scale + 2, des1 = scale + 26, con2 = scale + 28, des2 = scale + 8, 1.0)
-//    val controlTrue = Control(c12, c21, scale + 28, scale - 1, 1.0)
+    val controlTrue = Control(con1 = scale + 28, des1 = scale + 4, con2 = scale + 2, des2 = scale + 26, 1.0)
 
-    val swapFalse = ControlledSwap(falseFreq1, falseFreq2, controlFalse)
-//    val swapTrue = ControlledSwap(in1, in2, controlTrue)
+    val swap000 = ControlledSwap(falseFreq1, falseFreq2, controlFalse)
+    val swap001 = ControlledSwap(falseFreq1, falseFreq2, controlTrue)
+    val swap010 = ControlledSwap(falseFreq1, trueFreq2, controlFalse)
+    val swap011 = ControlledSwap(falseFreq1, trueFreq2, controlTrue)
+    val swap100 = ControlledSwap(trueFreq1, falseFreq2, controlFalse)
+    val swap101 = ControlledSwap(trueFreq1, falseFreq2, controlTrue)
+    val swap110 = ControlledSwap(trueFreq1, trueFreq2, controlFalse)
+    val swap111 = ControlledSwap(trueFreq1, trueFreq2, controlTrue)
 
 
     // Are the output values right?
@@ -32,7 +39,14 @@ object ScratchPad {
 //    val outTrue2 = Math.abs(trueFreq2 + c22)/2
 
 //    listen(operation = swapFalse, times = Seq(1.0), trueFrequencies = Seq(outTrue1, outTrue2), falseFrequencies = Seq(outFalse1, outFalse2))
-    display(swapFalse)
+    display("in1: 0, in2: 0, c: 0", swap000, false)
+    display("in1: 0, in2: 0, c: 1", swap001, true)
+    display("in1: 0, in2: 1, c: 0", swap010, false)
+    display("in1: 0, in2: 1, c: 1", swap011, true)
+    display("in1: 1, in2: 0, c: 0", swap100, false)
+    display("in1: 1, in2: 0, c: 1", swap101, true)
+    display("in1: 1, in2: 1, c: 0", swap110, false)
+    display("in1: 1, in2: 1, c: 1", swap111, true)
 	}
 
 	private def listen(operation: Operation, times: Seq[Double], trueFrequencies: Seq[Double], falseFrequencies: Seq[Double]) {
@@ -41,12 +55,16 @@ object ScratchPad {
     println("OUTPUT: " + outputSymbols.mkString(", ") + " at times: " + times.mkString(","))
   }
 
-	private def display(swap: ControlledSwap) {
+	private def display(title: String, swap: ControlledSwap, isSwap: Boolean) {
+    val beat1 = HalfASwap(swap.in1, swap.c, !isSwap)
+    val beat2 = HalfASwap(swap.in2, swap.c, isSwap)
 
-    val beat1 = HalfASwap(swap.in1, swap.c, true)
-    val beat2 = HalfASwap(swap.in2, swap.c, false)
-    Plot.line(data(beat1.f, randXValues))
+    val chart = Plot.line(data(beat1.f, randXValues))
       .addSeries(data(beat2.f, randXValues))
+
+    chart.series(0).name("input 1")
+    chart.series(1).name("input 2")
+    chart.title(title)
       .yAxis.range(-3, 3)
   }
 

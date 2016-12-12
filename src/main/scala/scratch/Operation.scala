@@ -22,41 +22,54 @@ object Control {
 
 case class Control(con1: Input, des1: Input, con2: Input, des2: Input, period: Double) extends Operation {
   def apply(t: Double): Double = {
-    if (isFirst(t))
+    if (isFirstPeriod(t))
       con1(t) + des1(t)
     else
       con2(t) + des2(t)
   }
 
-  def first(t: Double): Double = {
-    if (isFirst(t))
+  def firstOutput(t: Double): Double = {
+    if (isFirstPeriod(t))
       con1(t)
     else
       des2(t)
   }
 
-  def second(t: Double): Double = {
-    if (isFirst(t))
+  def secondOutput(t: Double): Double = {
+    if (isFirstPeriod(t))
       des1(t)
     else
       con2(t)
   }
 
-  def isFirst(t: Double): Boolean = (t/period).toInt % 2 == 0
+  def isFirstPeriod(t: Double): Boolean = (t/period).toInt % 2 == 0
 }
 
-case class HalfASwap(in: Input, c: Control, isFirst: Boolean) extends Operation {
-  def apply(t: Double): Double  = {
-    if (isFirst)
-      in(t) + c.first(t)
-    else
-      in(t) + c.second(t)
+case class HalfASwap(in: Input, c: Control, isFirstOutput: Boolean) extends Operation {
+  def apply(t: Double): Double = {
+    if (isFirstOutput)
+      in(t) + c.firstOutput(t)
+     else
+      in(t) + c.secondOutput(t)
   }
+
+  def print {
+    val firstPeriodFreq =
+      if (isFirstOutput) c.con1
+      else c.des1
+    val secondPeriodFreq =
+      if (isFirstOutput) c.des2
+      else c.con2
+    println(s"in: ${in.freq} c: $firstPeriodFreq, $secondPeriodFreq")
+  }
+}
+
+object ControlledSwap {
+  def apply(in1: Double, in2: Double, c: Control) = new ControlledSwap(Input(in1), Input(in2), c)
 }
 
 case class ControlledSwap(in1: Input, in2: Input, c: Control) extends Operation {
 
-  def this(in1: Double, in2: Double, c: Control): ControlledSwap = ControlledSwap(Input(in1), Input(in2), c)
 
   def apply(t: Double): Double  = in1(t) + in2(t) + c(t)
 }
