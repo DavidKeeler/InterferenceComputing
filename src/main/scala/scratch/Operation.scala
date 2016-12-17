@@ -6,6 +6,13 @@ abstract class Operation {
   def f: (Double=>Double) = {
     t: Double => this(t)
   }
+
+  def +(that: Operation): Operation = {
+    val otherThis = this
+    new Operation {
+      def apply(t: Double): Double = otherThis(t) + that(t)
+    }
+  }
 }
 
 case class Input(freq: Double, phase: Double=0.0) extends Operation {
@@ -52,16 +59,6 @@ case class HalfASwap(in: Input, c: Control, isFirstOutput: Boolean) extends Oper
      else
       in(t) + c.secondOutput(t)
   }
-
-  def print {
-    val firstPeriodFreq =
-      if (isFirstOutput) c.con1
-      else c.des1
-    val secondPeriodFreq =
-      if (isFirstOutput) c.des2
-      else c.con2
-    println(s"in: ${in.freq} c: $firstPeriodFreq, $secondPeriodFreq")
-  }
 }
 
 object ControlledSwap {
@@ -71,5 +68,5 @@ object ControlledSwap {
 case class ControlledSwap(in1: Input, in2: Input, c: Control) extends Operation {
 
 
-  def apply(t: Double): Double  = in1(t) + in2(t) + c(t)
+  def apply(t: Double): Double  = c(t) + in1(t) + in2(t)
 }

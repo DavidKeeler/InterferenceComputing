@@ -11,7 +11,7 @@ import org.apache.commons.math3.fitting.SimpleCurveFitter
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
-abstract class OutputSymbol(value: Boolean, estimatedFreq: Double, targetFreq: Double, error: Double)
+abstract class OutputSymbol(val value: Boolean, estimatedFreq: Double, targetFreq: Double, error: Double)
 case class True(estimatedFreq: Double, targetFreq: Double, error: Double) extends OutputSymbol(true, estimatedFreq, targetFreq, error)
 case class False(estimatedFreq: Double, targetFreq: Double, error: Double) extends OutputSymbol(false, estimatedFreq, targetFreq, error)
 
@@ -22,15 +22,16 @@ case class False(estimatedFreq: Double, targetFreq: Double, error: Double) exten
  */
 trait OutputListener {
   def listen(outputWave: Operation, time: Double): Option[OutputSymbol]
-  def extermePoints(outputWave: Operation, time: Double, targetFreq: Double): Seq[(Double, Double)]
+  def extremePoints(outputWave: Operation, time: Double, targetFreq: Double): Seq[(Double, Double)]
 }
 
-class ShittyEstimateListener (
+class ShittyEstimateListener(
     val trueFrequencies: Seq[Double],
     val falseFrequencies: Seq[Double],
-    val sampleWavelengths: Double = 10.0) extends OutputListener {
+    val sampleWavelengths: Double = 5.0,
+    val threshold: Double = 0.0,
+    val numSamples: Int = 10000) extends OutputListener {
 
-  private val numSamples = 10000
   def listen(operation: Operation, time: Double): Option[OutputSymbol] = {
     val trueOutput = trueFrequencies.map(listen(operation.f, time, _)).filter {
       case (hasOutput, _, _, _) => hasOutput
@@ -43,34 +44,40 @@ class ShittyEstimateListener (
       case (hasOutput, estFreq, target, error) => False(estFreq, target, error)
     }
 
-    if (!trueOutput.isEmpty && !falseOutput.isEmpty)
+    if (!trueOutput.isEmpty && !falseOutput.isEmpty) {
       throw new SomeoneFuckedUpException
+    }
 
     if (!trueOutput.isEmpty) Some(trueOutput.minBy(_.error))
     else if (!falseOutput.isEmpty) Some(falseOutput.minBy(_.error))
     else None
   }
 
-  def extermePoints(operation: Operation, time: Double, frequency: Double): Seq[(Double, Double)] = {
+  def extremePoints(operation: Operation, time: Double, frequency: Double): Seq[(Double, Double)] = {
     val timeDelta = sampleWavelengths/frequency
+//    val timeDelta = (sampleWavelengths + 1)/frequency
     getExtremes(operation.f, time, timeDelta)
   }
 
   private def listen(outputWave: Double=>Double, time: Double, frequency: Double): (Boolean, Double, Double, Double) = {
-    val allowedError = 2 //0.01 * frequency   // TODO: is there some principaled way to do this?
+    val allowedError = 1 // TODO: is there some principaled way to do this?
 
     val timeDelta = sampleWavelengths/frequency
+    //    val timeDelta = (sampleWavelengths + 1)/frequency
+
     val estFreq = estimateFrequency(outputWave, time, timeDelta)
     val error = Math.abs(estFreq - frequency)
+
 //    println(s"estFreq $estFreq frequency $frequency allowedError $allowedError")
     (error < allowedError, estFreq, frequency, error)
   }
 
   private def estimateFrequency(outputWave: Double=>Double, time: Double, timeDelta: Double): Double = {
-    val estWaveLenths = getExtremes(outputWave, time, timeDelta).map(_._1).sliding(2).toSeq.map {
-      case Seq(x1, x2) => 2 * (x2 - x1)
+    val extremePoints = getExtremes(outputWave, time, timeDelta)
+    val estWaveLengths = extremePoints.sortBy(_._1).sliding(2).toSeq.map {
+      case Seq(pt1, pt2) => 2 * (pt2._1 - pt1._1)
     }
-    val estWaveLength = estWaveLenths.sum/estWaveLenths.size
+    val estWaveLength = estWaveLengths.sum/estWaveLengths.size
 
     1.0/estWaveLength
   }
@@ -79,74 +86,45 @@ class ShittyEstimateListener (
     val startTime = time - timeDelta
     val endTime = time + timeDelta
 
+//    val startTime = time - timeDelta/2
+//    val endTime = time + timeDelta/2
+
     val rand = new Random
     val xValues = for (i <- 0 until numSamples) yield {
       (endTime - startTime) * rand.nextDouble + startTime
     }
     val allPoints = for (x <- xValues.sorted) yield {
-      val y = outputWave(x)
-      (x, y)
+      (x, outputWave(x))
     }
 
-    val threshold = 0.5   // TODO: make configuration param
-    val cutpoints = maxCutpoints(allPoints, threshold) ++ minCutpoints(allPoints, -threshold)
-    cutpoints.sortBy(_._1).map {
-      case (begin, end) => allPoints.slice(begin, end)
-    }.map {
-      points =>
-        if (points.head._2 >= threshold)
-          (points.map(_._1).sum/points.size, points.map(_._2).max)
-        else
-          (points.map(_._1).sum/points.size, points.map(_._2).min)
+    val sectionsOfPoints = sections(allPoints, threshold)
+
+    sectionsOfPoints.map { points =>
+      val weightedX = points.map { case (x, y) => x * y }
+      val x = weightedX.sum/points.map(_._2).sum
+      (x, points.map(_._2).max)
     }
   }
 
-  private def maxCutpoints(allPoints: Seq[(Double, Double)], threshold: Double): Seq[(Int, Int)] = {
+  private def sections(allPoints: Seq[(Double, Double)], threshold: Double): Seq[Seq[(Double, Double)]] = {
+    val sortedPoints = allPoints.sortBy(_._1)
+    val indexedPoints = sortedPoints.zipWithIndex
+    val pointPairs = indexedPoints.sliding(2).toSeq
 
-    val leadingPtOpts = for (i <- 1 until allPoints.size) yield {
-      if (allPoints(i)._2 >= threshold && allPoints(i - 1)._2 < threshold) Some(i)
-      else None
-    }
-    val trailingPtOpts = for (i <- 1 until allPoints.size) yield {
-      if (allPoints(i)._2 < threshold && allPoints(i - 1)._2 >= threshold) Some(i)
-      else None
-    }
-
-    if (leadingPtOpts.flatten.isEmpty || trailingPtOpts.flatten.isEmpty)
-      return Seq()
-
-    val trailingPoints =
-      if (leadingPtOpts.flatten.head > trailingPtOpts.flatten.toList.head) trailingPtOpts.flatten.tail
-      else trailingPtOpts.flatten
-    val leadingPoints =
-      if (trailingPtOpts.flatten.last < leadingPtOpts.flatten.last) leadingPtOpts.flatten.dropRight(1)
-      else leadingPtOpts.flatten
-
-    leadingPoints zip trailingPoints
-  }
-
-  private def minCutpoints(allPoints: Seq[(Double, Double)], threshold: Double): Seq[(Int, Int)] = {
-    val leadingPtOpts = for (i <- 1 until allPoints.size) yield {
-      if (allPoints(i)._2 <= threshold && allPoints(i - 1)._2 > threshold) Some(i)
-      else None
-    }
-    val trailingPtOpts = for (i <- 1 until allPoints.size) yield {
-      if (allPoints(i)._2 > threshold && allPoints(i - 1)._2 <= threshold) Some(i)
-      else None
+    val boundaryIndices = pointPairs.filter { case Seq(((x, y), index), ((nextX, nextY), nextIndex)) =>
+      y > 0 && nextY <= 0 || y < 0 && nextY >= 0
+    } map { case Seq((point, index), (nextPoint, nextIndex)) =>
+      index
     }
 
-    if (leadingPtOpts.flatten.isEmpty || trailingPtOpts.flatten.isEmpty)
-      return Seq()
-
-    val trailingPoints =
-      if (leadingPtOpts.flatten.head > trailingPtOpts.flatten.head) trailingPtOpts.flatten.tail
-      else trailingPtOpts.flatten
-    val leadingPoints =
-      if (trailingPtOpts.flatten.last < leadingPtOpts.flatten.last) leadingPtOpts.flatten.dropRight(1)
-      else leadingPtOpts.flatten
-
-    leadingPoints zip trailingPoints
+    boundaryIndices.sliding(2).toSeq.map {
+      case Seq(prev, next) => sortedPoints.slice(prev, next)
+    }.map { points =>
+      points.filter { case (x, y) => Math.abs(y) >= threshold }
+    }.filter { points =>
+      !points.isEmpty
+    }
   }
 }
 
-class SomeoneFuckedUpException extends Exception("Was it you?")
+class SomeoneFuckedUpException(how: String = "Was it you?") extends Exception(how)
