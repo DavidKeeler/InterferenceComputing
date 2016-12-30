@@ -54,8 +54,7 @@ class ShittyEstimateListener(
   }
 
   def extremePoints(operation: Operation, time: Double, frequency: Double): Seq[(Double, Double)] = {
-    val timeDelta = sampleWavelengths/frequency
-//    val timeDelta = (sampleWavelengths + 1)/frequency
+    val timeDelta = (sampleWavelengths + 1)/frequency
     getExtremes(operation.f, time, timeDelta)
   }
 
