@@ -66,7 +66,5 @@ object ControlledSwap {
 }
 
 case class ControlledSwap(in1: Input, in2: Input, c: Control) extends Operation {
-
-
   def apply(t: Double): Double  = c(t) + in1(t) + in2(t)
 }

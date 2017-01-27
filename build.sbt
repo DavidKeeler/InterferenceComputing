@@ -1,21 +1,21 @@
-lazy val root = (project in file(".")).
-  settings(
-    name := "InferenceComputing",
-    version := "1.0",
-    scalaVersion := "2.11.7"
-  )
 
-libraryDependencies ++= Seq(
-  "com.github.rodneykinney" %%  "quisp" % "0.6.0",
-  "org.scalatest" %% "scalatest" % "2.2.4" % "test"
-//  "jfree" %% "jfreechart" % "1.0.19"
-)
+name := "InferenceComputing"
 
-// https://mvnrepository.com/artifact/org.jfree/jfreechart
-libraryDependencies += "org.jfree" % "jfreechart" % "1.0.17"
+organization := "org.none"
 
-// https://mvnrepository.com/artifact/org.apache.commons/commons-io
-//libraryDependencies += "org.apache.commons" % "commons" % "1.3.2"
+version := "0.1.0"
+
+// set the Scala version used for the project
+scalaVersion := "2.11.6"
+
+// https://mvnrepository.com/artifact/com.github.wookietreiber/scala-chart_2.11
+libraryDependencies += "com.github.wookietreiber" % "scala-chart_2.11" % "0.5.1"
+
+// https://mvnrepository.com/artifact/com.itextpdf/itextpdf
+libraryDependencies += "com.itextpdf" % "itextpdf" % "5.5.6"
+
+// https://mvnrepository.com/artifact/org.scalatest/scalatest_2.11
+libraryDependencies += "org.scalatest" % "scalatest_2.11" % "2.2.2"
 
 libraryDependencies += "org.apache.commons" % "commons-math3" % "3.5"
 

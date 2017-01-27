@@ -5,40 +5,37 @@ import org.scalatest.FunSuite
 class OutputListenerTest extends FunSuite {
   private val trueFrequencies = Seq(100.0, 150.0)
   private val falseFrequencies = Seq(120.0, 170.0)
+  private val listener = new ShittyEstimateListener(
+    trueFrequencies = trueFrequencies,
+    falseFrequencies = falseFrequencies,
+    sampleWavelengths = 5.0,
+    threshold = 0.0,
+    numSamples = 10000,
+    allowedError = 1.0)
 
-//  test("None") {
-//    val listener = new ShittyEstimateListener(trueFrequencies, falseFrequencies)
-//    val output: Option[OutputSymbol] = listener.listen(Input(trueFrequencies.head + 100), 0.0)
-//
-//    assert(output.isEmpty)
-//  }
-//
-//  test("true") {
-//    val listener = new ShittyEstimateListener(trueFrequencies, falseFrequencies)
-//    val output: Option[OutputSymbol] = listener.listen(Input(trueFrequencies.head), 0.0)
-//
-//    assert(output.isDefined)
-//    assert(output.get.value === true)
-//  }
-//
-//  test("false") {
-//    val listener = new ShittyEstimateListener(trueFrequencies, falseFrequencies)
-//    val output: Option[OutputSymbol] = listener.listen(Input(falseFrequencies.head), 0.0)
-//    val expectedOutput = Some(false)
-//
-//    assert(output.isDefined)
-//    assert(output.get.value === false)
-//  }
-//
-//  test("single beat") {
-//    val beat = Beat(98, 102)
-//
-//    val listener = new ShittyEstimateListener(trueFrequencies, falseFrequencies)
-//    val output: Option[OutputSymbol] = listener.listen(beat, 0.0)
-//
-//    assert(output.isDefined)
-//    assert(output.get.value === true)
-//  }
+  test("None") {
+    val output = listener.listen(Input(trueFrequencies.head + 100), 0.0)
+
+    assert(output.value.isEmpty)
+  }
+
+  test("true") {
+    val output = listener.listen(Input(trueFrequencies.head), 0.0)
+
+    assert(output.value.get === true)
+  }
+
+  test("false") {
+    val output = listener.listen(Input(falseFrequencies.head), 0.0)
+    assert(output.value.get === false)
+  }
+
+  test("single beat") {
+    val beat = Beat(98, 102)
+    val output = listener.listen(beat, 0.0)
+
+    assert(output.value.get === true)
+  }
 
   test("a beat between beats") {
 //    val in1 = Input(20.025, 0.0)
@@ -63,13 +60,9 @@ class OutputListenerTest extends FunSuite {
     val scale = 100
     val wtf = Beat(scale, scale + 2)
 
-    val listener = new ShittyEstimateListener(trueFrequencies = Seq(scale + 1), falseFrequencies,
-      sampleWavelengths = 10.0,
-      threshold = 1.0,
-      numSamples = 10000)
-    val output = listener.listen(wtf, time = 0.0)
-
-    assert(output.get.value === true)
+    val output = listener.listen(wtf, time)
+println(output)
+    assert(output.value.get === true)
   }
 
   object Beat {

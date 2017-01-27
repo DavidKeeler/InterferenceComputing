@@ -11,17 +11,20 @@ import org.apache.commons.math3.fitting.SimpleCurveFitter
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
-abstract class OutputSymbol(val value: Boolean, estimatedFreq: Double, targetFreq: Double, error: Double)
-case class True(estimatedFreq: Double, targetFreq: Double, error: Double) extends OutputSymbol(true, estimatedFreq, targetFreq, error)
-case class False(estimatedFreq: Double, targetFreq: Double, error: Double) extends OutputSymbol(false, estimatedFreq, targetFreq, error)
-
+abstract class OutputSymbol(val value: Option[Boolean], estimatedFreq: Double, targetFreq: Double) {
+  def error = Math.abs(estimatedFreq - targetFreq)
+  override def toString = f"${this.getClass.getSimpleName}[est freq: $estimatedFreq%.2f error: $error%.2f]"
+}
+case class True(estimatedFreq: Double, targetFreq: Double) extends OutputSymbol(Some(true), estimatedFreq, targetFreq)
+case class False(estimatedFreq: Double, targetFreq: Double) extends OutputSymbol(Some(false), estimatedFreq, targetFreq)
+case class Empty(estimatedFreq: Double, targetFreq: Double) extends OutputSymbol(None, estimatedFreq, targetFreq)
 
 /**
  * Listens to the output wave and writes to the output strip, if 
  * a frequency is recognized.
  */
 trait OutputListener {
-  def listen(outputWave: Operation, time: Double): Option[OutputSymbol]
+  def listen(outputWave: Operation, time: Double): OutputSymbol
   def extremePoints(outputWave: Operation, time: Double, targetFreq: Double): Seq[(Double, Double)]
 }
 
@@ -30,27 +33,24 @@ class ShittyEstimateListener(
     val falseFrequencies: Seq[Double],
     val sampleWavelengths: Double = 5.0,
     val threshold: Double = 0.0,
-    val numSamples: Int = 10000) extends OutputListener {
+    val numSamples: Int = 100000,
+    val allowedError: Double = 40.0) extends OutputListener {
 
-  def listen(operation: Operation, time: Double): Option[OutputSymbol] = {
-    val trueOutput = trueFrequencies.map(listen(operation.f, time, _)).filter {
-      case (hasOutput, _, _, _) => hasOutput
-    }.map {
-      case (hasOutput, estFreq, target, error) => True(estFreq, target, error)
+  def listen(operation: Operation, time: Double): OutputSymbol = {
+    val trueOutput = trueFrequencies.map(listen(operation.f, time, _)).map {
+      case (true, estFreq, target) => True(estFreq, target)
+      case (false, estFreq, target) => Empty(estFreq, target)
     }
-    val falseOutput = falseFrequencies.map(listen(operation.f, time, _)).filter {
-      case (hasOutput, _, _, _) => hasOutput
-    }.map {
-      case (hasOutput, estFreq, target, error) => False(estFreq, target, error)
-    }
-
-    if (!trueOutput.isEmpty && !falseOutput.isEmpty) {
-      throw new SomeoneFuckedUpException
+    val falseOutput = falseFrequencies.map(listen(operation.f, time, _)).map {
+      case (true, estFreq, target) => False(estFreq, target)
+      case (false, estFreq, target) => Empty(estFreq, target)
     }
 
-    if (!trueOutput.isEmpty) Some(trueOutput.minBy(_.error))
-    else if (!falseOutput.isEmpty) Some(falseOutput.minBy(_.error))
-    else None
+//    if (!trueOutput.isEmpty && !falseOutput.isEmpty) {
+//      throw new SomeoneFuckedUpException
+//    }
+
+    (trueOutput ++ falseOutput).minBy(_.error)
   }
 
   def extremePoints(operation: Operation, time: Double, frequency: Double): Seq[(Double, Double)] = {
@@ -58,9 +58,7 @@ class ShittyEstimateListener(
     getExtremes(operation.f, time, timeDelta)
   }
 
-  private def listen(outputWave: Double=>Double, time: Double, frequency: Double): (Boolean, Double, Double, Double) = {
-    val allowedError = 1 // TODO: is there some principaled way to do this?
-
+  private def listen(outputWave: Double=>Double, time: Double, frequency: Double): (Boolean, Double, Double) = {
     val timeDelta = sampleWavelengths/frequency
     //    val timeDelta = (sampleWavelengths + 1)/frequency
 
@@ -68,7 +66,7 @@ class ShittyEstimateListener(
     val error = Math.abs(estFreq - frequency)
 
 //    println(s"estFreq $estFreq frequency $frequency allowedError $allowedError")
-    (error < allowedError, estFreq, frequency, error)
+    (error < allowedError, estFreq, frequency)
   }
 
   private def estimateFrequency(outputWave: Double=>Double, time: Double, timeDelta: Double): Double = {
@@ -101,7 +99,7 @@ class ShittyEstimateListener(
     sectionsOfPoints.map { points =>
       val weightedX = points.map { case (x, y) => x * y }
       val x = weightedX.sum/points.map(_._2).sum
-      (x, points.map(_._2).max)
+      (x, points.map(_._2).maxBy(Math.abs))
     }
   }
 
