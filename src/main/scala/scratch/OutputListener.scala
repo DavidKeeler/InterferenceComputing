@@ -13,7 +13,7 @@ import scala.collection.mutable
 
 abstract class OutputSymbol(val value: Option[Boolean], estimatedFreq: Double, targetFreq: Double) {
   def error = Math.abs(estimatedFreq - targetFreq)
-  override def toString = f"${this.getClass.getSimpleName}[est freq: $estimatedFreq%.2f error: $error%.2f]"
+  override def toString = f"${this.getClass.getSimpleName}[est freq: $estimatedFreq%.2f error: $error%.2f]" //target freq: $targetFreq%.2f]"
 }
 case class True(estimatedFreq: Double, targetFreq: Double) extends OutputSymbol(Some(true), estimatedFreq, targetFreq)
 case class False(estimatedFreq: Double, targetFreq: Double) extends OutputSymbol(Some(false), estimatedFreq, targetFreq)
@@ -38,14 +38,17 @@ class ShittyEstimateListener(
 
   def listen(operation: Operation, time: Double): OutputSymbol = {
     val trueOutput = trueFrequencies.map(listen(operation.f, time, _)).map {
-      case (true, estFreq, target) => True(estFreq, target)
-      case (false, estFreq, target) => Empty(estFreq, target)
+      case (_, estFreq, target) => True(estFreq, target)
+//      case (true, estFreq, target) => True(estFreq, target)
+//      case (false, estFreq, target) => Empty(estFreq, target)
     }
     val falseOutput = falseFrequencies.map(listen(operation.f, time, _)).map {
-      case (true, estFreq, target) => False(estFreq, target)
-      case (false, estFreq, target) => Empty(estFreq, target)
+      case (_, estFreq, target) => False(estFreq, target)
+//      case (true, estFreq, target) => False(estFreq, target)
+//      case (false, estFreq, target) => Empty(estFreq, target)
     }
 
+      // TODO: error, if a true and false is matched
 //    if (!trueOutput.isEmpty && !falseOutput.isEmpty) {
 //      throw new SomeoneFuckedUpException
 //    }
@@ -59,32 +62,28 @@ class ShittyEstimateListener(
   }
 
   private def listen(outputWave: Double=>Double, time: Double, frequency: Double): (Boolean, Double, Double) = {
-    val timeDelta = sampleWavelengths/frequency
-    //    val timeDelta = (sampleWavelengths + 1)/frequency
-
+    val timeDelta = (sampleWavelengths + 1)/frequency
     val estFreq = estimateFrequency(outputWave, time, timeDelta)
     val error = Math.abs(estFreq - frequency)
 
-//    println(s"estFreq $estFreq frequency $frequency allowedError $allowedError")
     (error < allowedError, estFreq, frequency)
   }
 
   private def estimateFrequency(outputWave: Double=>Double, time: Double, timeDelta: Double): Double = {
     val extremePoints = getExtremes(outputWave, time, timeDelta)
+    if (extremePoints.size == 1)
+      return 1.0/timeDelta
+
     val estWaveLengths = extremePoints.sortBy(_._1).sliding(2).toSeq.map {
       case Seq(pt1, pt2) => 2 * (pt2._1 - pt1._1)
     }
     val estWaveLength = estWaveLengths.sum/estWaveLengths.size
-
     1.0/estWaveLength
   }
 
   private def getExtremes(outputWave: Double=>Double, time: Double, timeDelta: Double): Seq[(Double, Double)] = {
-    val startTime = time - timeDelta
-    val endTime = time + timeDelta
-
-//    val startTime = time - timeDelta/2
-//    val endTime = time + timeDelta/2
+    val startTime = time - timeDelta/2
+    val endTime = time + timeDelta/2
 
     val rand = new Random
     val xValues = for (i <- 0 until numSamples) yield {
