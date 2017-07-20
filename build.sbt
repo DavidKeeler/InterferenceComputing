@@ -22,6 +22,9 @@ libraryDependencies += "org.apache.commons" % "commons-math3" % "3.5"
 // https://mvnrepository.com/artifact/org.scalanlp/breeze_2.11
 libraryDependencies += "org.scalanlp" % "breeze_2.11" % "0.13.1"
 
+// https://mvnrepository.com/artifact/com.typesafe.scala-logging/scala-logging-slf4j_2.11
+libraryDependencies += "com.typesafe.scala-logging" % "scala-logging-slf4j_2.11" % "2.1.2"
+
 
 
 resolvers ++= Seq(

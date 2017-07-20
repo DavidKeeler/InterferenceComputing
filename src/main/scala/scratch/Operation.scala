@@ -10,7 +10,9 @@ case object Input1 extends WhichInput
 case object Input2 extends WhichInput
 case object ControlInput extends WhichInput
 
-class Circuit(implicit period: Double= 1.0, initialParams: Params = new Params) {
+class Circuit(period: Double= 1.0, initialParams: Params = new Params) {
+  implicit val periodImpl = period
+
   private var t = 0
 
   val root = new Gate(id="0", parent=None, period=period, initialParams)
@@ -168,9 +170,6 @@ object Gate {
   }
 }
 
-object Params {
-  def apply(a: Int, b: Int, c: Int, d: Int, e: Int): Params = new Params(a, b, c, d, e)
-}
 class Params(val a: Int = 100, val b: Int = 2, val c: Int = 2, val d: Int = 0, val e: Int = 0) extends (Int, Int, Int, Int, Int)(a, b, c, d, e) {
   override def toString = s"($a, $b, $c, $d, $e)"
 
