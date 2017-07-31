@@ -9,7 +9,6 @@ class OperationTest extends FunSuite {
   val logger = Logger(LoggerFactory.getLogger("OperationTest"))
 
   test("Single Gate") {
-
     implicit val period = 1.0
 
     val circuit = new Circuit(period, new Params(100, 2, 2, 0, 0))

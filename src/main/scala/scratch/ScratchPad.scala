@@ -13,39 +13,45 @@ object ScratchPad {
     implicit val period = 1.0
 
     val circuit = new Circuit
-    circuit.toGate("0", Input1)
+    circuit.toGate(gateId = circuit.inputGates.keys.head, which = Input1)
 
     val ids = circuit.inputGates.keys
-
     val gates = circuit.inputGates.flatMap(_._2)
-    val root = gates.head
 
-    println("Id: " + root.id)
-    println("inTrue1: " + root.params.inTrue1 + " inFalse1: " + root.params.inFalse1)
-    println("inTrue2: " + root.params.inTrue2 + " inFalse2: " + root.params.inFalse2)
-    println("controlTrue: " + root.params.controlTrue + " controlFalse: " + root.params.controlFalse)
-    println("controlTrueDes: " + root.params.controlTrueDes + " controlFalseDes: " + root.params.controlFalseDes)
+    println(gates.size)
+    gates.map(gate => printGate(gate))
+  }
+
+  def printGate(gate: Gate, verify: Boolean = false)(implicit period: Double) {
+    println("Id: " + gate.id)
+    println("inTrue1: " + gate.params.inTrue1 + " inFalse1: " + gate.params.inFalse1)
+    println("inTrue2: " + gate.params.inTrue2 + " inFalse2: " + gate.params.inFalse2)
+    println("controlTrue: " + gate.params.controlTrue + " controlFalse: " + gate.params.controlFalse)
+    println("controlTrueDes: " + gate.params.controlTrueDes + " controlFalseDes: " + gate.params.controlFalseDes)
     println
 
-    println("outTrue: " + root.params.outTrue + " outFalse: " + root.params.outFalse)
-    println("outDesTrue: " + root.params.outDesTrue + " outDesFalse: " + root.params.outDesFalse)
+    println("outTrue: " + gate.params.outTrue + " outFalse: " + gate.params.outFalse)
+    println("outDesTrue: " + gate.params.outDesTrue + " outDesFalse: " + gate.params.outDesFalse)
     println
 
-//    val outTrue1 = (root.params.inTrue1 + root.params.controlTrue)/2
-//    val outTrue2 = (root.params.inTrue2 + root.params.controlFalse)/2
-//    println("outTrue1: " + outTrue1 + " outTrue2: " + outTrue2)
-//
-//    val outFalse1 = (root.params.inFalse1 + root.params.controlTrue)/2
-//    val outFalse2 = (root.params.inFalse2 + root.params.controlFalse)/2
-//    println("outFalse1: " + outFalse1 + " outFalse2: " + outFalse2)
-//
-//    val outTrueDes1 = (root.params.inTrue2 + root.params.controlTrueDes)/2
-//    val outTrueDes2 = (root.params.inTrue1 + root.params.controlFalseDes)/2
-//    println("outTrueDes1: " + outTrueDes1 + " outTrueDes2: " + outTrueDes2)
-//
-//    val outFalseDes1 = (root.params.inFalse1 + root.params.controlFalseDes)/2
-//    val outFalseDes2 = (root.params.inFalse2 + root.params.controlTrueDes)/2
-//    println("outFalseDes1: " + outFalseDes1 + " outFalseDes2: " + outFalseDes2)
+    if (verify) {
+      println("Verification")
+      val outTrue1 = (gate.params.inTrue1 + gate.params.controlTrue) / 2
+      val outTrue2 = (gate.params.inTrue2 + gate.params.controlFalse) / 2
+      println("outTrue1: " + outTrue1 + " outTrue2: " + outTrue2)
+
+      val outFalse1 = (gate.params.inFalse1 + gate.params.controlTrue) / 2
+      val outFalse2 = (gate.params.inFalse2 + gate.params.controlFalse) / 2
+      println("outFalse1: " + outFalse1 + " outFalse2: " + outFalse2)
+
+      val outTrueDes1 = (gate.params.inTrue2 + gate.params.controlTrueDes) / 2
+      val outTrueDes2 = (gate.params.inTrue1 + gate.params.controlFalseDes) / 2
+      println("outTrueDes1: " + outTrueDes1 + " outTrueDes2: " + outTrueDes2)
+
+      val outFalseDes1 = (gate.params.inFalse1 + gate.params.controlFalseDes) / 2
+      val outFalseDes2 = (gate.params.inFalse2 + gate.params.controlTrueDes) / 2
+      println("outFalseDes1: " + outFalseDes1 + " outFalseDes2: " + outFalseDes2)
+    }
   }
 
   def old() {

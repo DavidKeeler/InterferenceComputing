@@ -15,13 +15,13 @@ class Circuit(period: Double= 1.0, initialParams: Params = new Params) {
 
   private var t = 0
 
-  val root = new Gate(id="0", parent=None, period=period, initialParams)
-  val inputGates = mutable.Map[String, Set[Gate]](root.id -> Set(root))
+  val root = new Gate(id=Gate.nextId, parent=None, period=period, initialParams)
+  val inputGates = mutable.Map[Int, Set[Gate]](root.id -> Set(root))
 
   private val samples: Array[Double] = (0 until 10000).map(index => root(index/period)).toArray
   private val listener = Listener(root.params.outTrue, root.params.outFalse, period)
 
-  def changeInput(which: WhichInput, gateId: String): Boolean = {
+  def changeInput(which: WhichInput, gateId: Int): Boolean = {
     val gates = inputGates(gateId)
     val inputs = gates.map(gate => gate.getInput(which))
     val inverse = Array[Double](samples.size).map {
@@ -42,7 +42,7 @@ class Circuit(period: Double= 1.0, initialParams: Params = new Params) {
     listener(samples)
   }
 
-  def removeGate(gateId: String): Boolean = {
+  def removeGate(gateId: Int): Boolean = {
     val gates = inputGates(gateId)
     if (gates.foldLeft(true){ case (isNotRoot, gate) => isNotRoot && gate.parent.isDefined })
       throw new IllegalArgumentException
@@ -66,7 +66,7 @@ class Circuit(period: Double= 1.0, initialParams: Params = new Params) {
     listener(samples)
   }
 
-  def toGate(gateId: String, which: WhichInput): Boolean = {
+  def toGate(gateId: Int, which: WhichInput): Boolean = {
     // Find the inverse of the existing input
     val gates = inputGates(gateId)
     val inputs = gates.map(gate => gate.getInput(which))
@@ -75,11 +75,12 @@ class Circuit(period: Double= 1.0, initialParams: Params = new Params) {
     }.toArray
 
     // Change to gate
-    val updatedGates = gates.map(gate => gate.replaceWithGate(which, gateId))
+    val addedGates = gates.map(gate => gate.replaceWithGate(which, gateId))
+    inputGates ++ addedGates.map(gate => (gate.id, gate))
 
     // Find the new signal
     val updated = (0 until samples.size).map {
-      index => updatedGates.foldLeft(0.0) { case (sum, input) => sum + input(index/period) }
+      index => addedGates.foldLeft(0.0) { case (sum, input) => sum + input(index/period) }
     }.toArray
 
     // Play the inverse and new signal and listen for output
@@ -98,10 +99,6 @@ case class Listener(trueFreq: Double, falseFreq: Double, period: Double) {
     val sampleFreq = period/signal.length
 
     val frequencyVector = fourierTr(DenseVector(samples))
-
-    println("signal: " + signal.size + " samples: " + samples.size + " frequencyVector: " + frequencyVector.size)
-    println("trueFreq: " + trueFreq + " falseFreq: " + falseFreq + " sampleFreq: " + sampleFreq)
-    println("trueFreq * sampleFreq: " + (trueFreq * sampleFreq))
 
     val trueOutput = frequencyVector.apply(trueFreq.asInstanceOf[Int])
     val falseOutput = frequencyVector.apply(falseFreq.asInstanceOf[Int])
@@ -125,12 +122,12 @@ class Control(var construct: Connection, var destruct: Connection, parent: Gate)
 
   def isInput: Boolean = construct.isInstanceOf[Input] && destruct.isInstanceOf[Input]
 
-  def replaceWithGate(id: String) {
+  def replaceWithGate(id: Int) {
   if (!construct.isInstanceOf[Input] || !destruct.isInstanceOf[Input])
     throw new IllegalArgumentException
 
-    construct = Gate(id, parent, parent.period)
-    destruct = Gate(id, parent, parent.period)
+    construct = Gate(parent, parent.period)
+    destruct = Gate(parent, parent.period)
   }
 
   def replaceWithInput {
@@ -162,14 +159,6 @@ class Input(var value: Boolean, amp: Double, val outTrue: Double, val outFalse: 
   def changeValue { !value }
 }
 
-object Gate {
-  def apply(id: String, parent: Gate, period: Double): Gate = {
-
-    val params = new Params(0, parent.params.b + 1, parent.params.c + 1, 0, 0)
-    new Gate(id, Some(parent), period, params)
-  }
-}
-
 class Params(val a: Int = 100, val b: Int = 2, val c: Int = 2, val d: Int = 0, val e: Int = 0) extends (Int, Int, Int, Int, Int)(a, b, c, d, e) {
   override def toString = s"($a, $b, $c, $d, $e)"
 
@@ -194,7 +183,20 @@ class Params(val a: Int = 100, val b: Int = 2, val c: Int = 2, val d: Int = 0, v
   def inputFreqs(implicit period: Double): Set[Double] = Set(inTrue1, inTrue2, inFalse1, inFalse2, controlTrue, controlFalse, controlTrueDes, controlFalseDes)
 }
 
-class Gate(val id: String,
+object Gate {
+  private var id = 0
+  def nextId: Int = {
+    id += 1
+    id
+  }
+
+  def apply(parent: Gate, period: Double): Gate = {
+    val params = new Params(nextId, parent.params.b + 1, parent.params.c + 1, 0, 0)
+    new Gate(id, Some(parent), period, params)
+  }
+}
+
+class Gate(val id: Int,
            val parent: Option[Gate],
            implicit val period: Double,
            val params: Params) extends Connection {
@@ -218,7 +220,9 @@ class Gate(val id: String,
     parent.get.amp/2
   }
 
-  def getInput(which: WhichInput): Connection = {
+  def getInput(which: WhichInput): Input = getConnection(which).asInstanceOf[Input]
+  def getGate(which: WhichInput): Gate = getConnection(which).asInstanceOf[Gate]
+  def getConnection(which: WhichInput): Connection = {
     which match {
       case Input1 => input1
       case Input2 => input2
@@ -246,28 +250,22 @@ class Gate(val id: String,
       throw new IllegalArgumentException
   }
 
-  def replaceWithGate(con: Connection, id: String): Connection = replaceWithGate(which(con), id)
-  def replaceWithGate(which: WhichInput, id: String): Connection = {
-    if (!getInput(which).isInstanceOf[Input])
-      throw new IllegalArgumentException
-
+  def replaceWithGate(con: Connection, id: Int): Gate = replaceWithGate(which(con), id)
+  def replaceWithGate(which: WhichInput, id: Int): Gate = {
     which match {
-      case Input1 if input1.isInstanceOf[Input] => input1 = Gate(id, this, period)
-      case Input2 if input2.isInstanceOf[Input] => input2 = Gate(id, this, period)
+      case Input1 => input1 = Gate(this, period)
+      case Input2 => input2 = Gate(this, period)
       case ControlInput => control.replaceWithGate(id)
     }
 
-    getInput(which)
+    getGate(which)
   }
 
-  def replaceWithInput(con: Connection): Connection = replaceWithInput(which(con))
-  def replaceWithInput(which: WhichInput): Connection = {
-    if (!getInput(which).isInstanceOf[Gate])
-      throw new IllegalArgumentException
-
+  def replaceWithInput(con: Connection): Input = replaceWithInput(which(con))
+  def replaceWithInput(which: WhichInput): Input = {
     which match {
-      case Input1 if input1.isInstanceOf[Gate] => input1 = new Input(false, amp, input1.outTrue, input1.outFalse)
-      case Input2 if input2.isInstanceOf[Gate] => input2 = new Input(false, amp, input2.outTrue, input2.outFalse)
+      case Input1 => input1 = new Input(false, amp, input1.outTrue, input1.outFalse)
+      case Input2 => input2 = new Input(false, amp, input2.outTrue, input2.outFalse)
       case ControlInput => control.replaceWithInput
     }
 
