@@ -14,9 +14,9 @@ class OperationTest extends FunSuite {
     val circuit = new Circuit(period, new Params(100, 2, 2, 0, 0))
     circuit.toGate("0", Input1)
 
-    val ids = circuit.inputGates.keys
+    val ids = circuit.allGates.keys
 
-    val gates = circuit.inputGates.flatMap(_._2)
+    val gates = circuit.allGates.flatMap(_._2)
     val root = gates.head
 
     logger.info("Id: " + root.id)
