@@ -1,6 +1,7 @@
 package scratch
 
 import breeze.linalg.DenseVector
+import breeze.math.Complex
 
 import scala.collection.mutable
 import breeze.signal._
@@ -46,30 +47,6 @@ class Circuit()(implicit period: Double= 1.0) {
 
     listener(samples)
   }
-
-//  def removeGate(gateId: Int): Boolean = {
-//    val gates = allGates(gateId)
-//    if (gates.foldLeft(true){ case (isNotRoot, gate) => isNotRoot && gate.parent.isDefined })
-//      throw new IllegalArgumentException
-//
-//    val inverse = Array[Double](samples.size).map {
-//      index => gates.foldLeft(0.0) { case (sum, gate) => sum - gate(index/period) }
-//    }
-//
-//    val updatedInputs = gates.flatMap {
-//      gate => gate.parent.map(_.replaceWithInput(gate))
-//    }
-//
-//    val updated = Array[Double](samples.size).map {
-//      index => updatedInputs.foldLeft(0.0) { case (sum, input) => sum + input(index/period) }
-//    }
-//
-//    for (i <- 0 to samples.size) {
-//      samples(i) += inverse(i) + updated(i)
-//    }
-//
-//    listener(samples)
-//  }
 
   def toGate(gateId: Int, which: WhichInput): Boolean = {
     // Find the inverse of the existing input
@@ -316,14 +293,30 @@ class Circuit()(implicit period: Double= 1.0) {
   }
 }
 
-object Listener {
+//object Listener {
+//  def apply(samples: Array[Double], fs: Double): Vector[(Complex, Double)] = {
+//    val frequencyVector = fourierTr(DenseVector(samples))
+//    frequencyVector.toScalaVector().zipWithIndex.map { case (c, i) => (c, (i * fs)/samples.length) }
+//  }
+//}
 
-  def apply(sample: Array[Double]) = {
-    val frequencyVector = fourierTr(DenseVector(sample))
-    frequencyVector.toScalaVector()
+class TryAgain(trueFreq: Double, falseFreq: Double, mag: Double) {
+
+  def listen(samples: Seq[Double], fs: Double): Boolean = {
+    val trueSamples = (0 until samples.size).map(i => mag * Math.sin(trueFreq * i/fs))
+    val trueError = samples.zip(trueSamples).map {
+      case (sample, trueSample) => Math.abs(sample - trueSample)
+    }.sum
+
+    val falseSamples = (0 until samples.size).map(i => mag * Math.sin(falseFreq * i/fs))
+    val falseError = samples.zip(falseSamples).map {
+      case (sample, falseSample) => Math.abs(sample - falseSample)
+    }.sum
+
+    println("true: " + trueError + " falseError: " + falseError)
+    trueError < falseError
   }
 }
-
 
 
 

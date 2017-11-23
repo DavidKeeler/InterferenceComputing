@@ -10,27 +10,26 @@ object ScratchPad {
   val outputDir = "/home/seusswithmoose/tmp/"
 
   def main(args: Array[String]) {
-    val fs = 1000.0
+    val fs = 10000.0
     val sampleTime = 0.1
 
-    val f = Seq(905, 895)
-    println("Input Freq: " + f.mkString(","))
-    val times = (0.0 until sampleTime by 1.0/fs)
+    val times = (-sampleTime until sampleTime by 1.0/fs)
+    val f = Seq(999, 1001)
     val samples = times.map {
-      t => f.map(x => Math.sin(2 * Math.PI * x * t)).sum/f.size
+      t => f.map(frequency => Math.sin(frequency * t)).sum
     }.toArray
+//    val samples = times.map(t => Math.sin(1010 * t))
+    val timeAndSamples = times.zip(samples)
 
-//    println(times.zip(samples.map(s => if (Math.abs(s) < 0.001) 0.0 else s)).mkString("\n"))
-
-    val freqs = Listener(samples).zipWithIndex.map { case (c, i) => (c, (i * fs)/samples.length) }
-    freqs.foreach {
-      case (c, frequency) =>
-        val mag = Math.sqrt(c.real * c.real + c.imag * c.imag)/samples.length
-        if (mag > 0.1)
-          println(f"${frequency}%1.4f: $mag%1.4f <$c>")
-    }
-
-    println("Max: " + freqs.map(_._2).max)
+    val output = new TryAgain(1001, 1000, 2.0).listen(samples, fs)
+    println("Output: " + output)
+//    val freqs = Listener(samples, fs)
+//    freqs.foreach {
+//      case (c, frequency) =>
+//        val mag = Math.sqrt(c.real * c.real + c.imag * c.imag)/samples.length
+//        if (mag > 0.1 || frequency == 900)
+//          println(f"${frequency}%1.4f: $mag%1.4f <$c>")
+//    }
 
 //    implicit val period = 1.0
 //    val circuit = new Circuit
@@ -40,16 +39,14 @@ object ScratchPad {
 
 //    circuit.print(false)
 
-
-//    val timeAndSamples = samples.toSeq.zip(times)
-//    display("tmp?", "help", timeAndSamples)
+    display("tmp/", "help", timeAndSamples, f)
   }
 
   def display(dir: String,
               title: String,
-              samples: Seq[(Double, Double)]) {
+              samples: Seq[(Double, Double)],
+              f: Seq[Double]) {
 
-    val data = for (i <- 1 to 5) yield (i,i)
     val chart = XYLineChart(samples)
     chart.saveAsPDF(dir + title + ".pdf")
   }
